@@ -501,12 +501,15 @@ let mesSel=5,mesAno=2026,poupTipo='deposito';
 
 // ═══ CONEXÃO COM GOOGLE SHEETS ═══
 // URL da implantação do Apps Script (Implantar > Nova implantação > App da Web)
-const API_URL = 'https://script.google.com/macros/s/AKfycbx09XtM0IaBQ7xixUrCQmON1HyOd_1AKy3gfc3leomUzwtAo2dLbe_MAbgSdf7qTcA/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzfXddqj-7xses77K8cm2bSbUqu1B4edf9KEN4cp1yckmgzAuJ244KKbvVoP9v-A8bI/exec';
 const API_SECRET = '';
 let SYNC_OK = true;
 
 async function apiGet(){
-  const res = await fetch(API_URL + '?action=getAll');
+  const res = await fetch(API_URL + '?action=getAll', {
+    redirect: 'follow',
+    method: 'GET'
+  });
   const json = await res.json();
   if(!json.ok) throw new Error(json.error || 'Erro ao carregar dados');
   return json.data;
