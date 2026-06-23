@@ -561,22 +561,22 @@ let CATS=[]; // gastos por categoria do mês — recalculado localmente a partir
 
 // Mapeia uma linha da aba "Compras" no Sheets para o formato interno do app
 function rowToCompra(r){
-  return {id:Number(r.id), data:formatDateForApp_(r.data_compra), desc:r.descricao, cat:r.categoria, forma:r.forma_pagamento, totalParc:Number(r.total_parcelas), valorTotal:Number(r.valor_total), resp:r.responsavel};
+  return {id:Number(r.id), data:formatDateForApp_(r.data_compra), desc:r.descricao, cat:r.categoria, forma:r.forma_pagamento, totalParc:Number(r.total_parcelas), valorTotal:parseMoneyBR(String(r.valor_total)), resp:r.responsavel};
 }
 function rowToFixo(r){
-  return {_row:r._row, desc:r.descricao, cat:r.categoria, valor:Number(r.valor), venc:Number(r.dia_vencimento), resp:r.responsavel, forma:r.forma_pagamento};
+  return {_row:r._row, desc:r.descricao, cat:r.categoria, valor:parseMoneyBR(String(r.valor)), venc:Number(r.dia_vencimento), resp:r.responsavel, forma:r.forma_pagamento};
 }
 function rowToSalario(r){
-  return {_row:r._row, pessoa:r.pessoa, data:formatDateForApp_(r.data), bruto:Number(r.valor_bruto), liq:Number(r.valor_liquido)};
+  return {_row:r._row, pessoa:r.pessoa, data:formatDateForApp_(r.data), bruto:parseMoneyBR(String(r.valor_bruto)), liq:parseMoneyBR(String(r.valor_liquido))};
 }
 function rowToExtra(r){
-  return {_row:r._row, desc:r.descricao, data:formatDateForApp_(r.data), resp:r.responsavel, valor:Number(r.valor)};
+  return {_row:r._row, desc:r.descricao, data:formatDateForApp_(r.data), resp:r.responsavel, valor:parseMoneyBR(String(r.valor))};
 }
 function rowToEmprestimo(r){
-  return {_row:r._row, de:r.de_quem, data:formatDateForApp_(r.data), resp:r.quem_recebe, valor:Number(r.valor)};
+  return {_row:r._row, de:r.de_quem, data:formatDateForApp_(r.data), resp:r.quem_recebe, valor:parseMoneyBR(String(r.valor))};
 }
 function rowToPoup(r){
-  return {_row:r._row, data:formatDateForApp_(r.data), onde:r.onde, tipo:r.tipo, mov:r.movimento, valor:Number(r.valor)};
+  return {_row:r._row, data:formatDateForApp_(r.data), onde:r.onde, tipo:r.tipo, mov:r.movimento, valor:parseMoneyBR(String(r.valor))};
 }
 // O Google Sheets pode devolver datas como objeto Date serializado; normaliza pra 'YYYY-MM-DD'
 function formatDateForApp_(v){
