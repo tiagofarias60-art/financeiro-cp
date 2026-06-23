@@ -571,16 +571,32 @@ let CATS=[]; // gastos por categoria do mês — recalculado localmente a partir
 
 // Mapeia uma linha da aba "Compras" no Sheets para o formato interno do app
 function rowToCompra(r){
-  // total_parcelas pode vir como número (ex: 3) ou string tipo "1/3"
+  // total_parcelas pode vir como:
+  // - número: 3
+  // - string "1/3" (formato correto)
+  // - objeto Date (Sheets converteu "1/2" em data) → ignorar e usar 1/1
   let totalParc = 1, parcStr = '';
-  const tp = String(r.total_parcelas || '1');
-  if(tp.includes('/')){
-    const parts = tp.split('/');
-    parcStr = tp;
-    totalParc = parseInt(parts[1]) || 1;
+  const tp = r.total_parcelas;
+  if(tp && typeof tp === 'object' && tp instanceof Date){
+    // Sheets converteu a string de parcela em data — não dá pra recuperar, marca como 1/1
+    parcStr = '?/?';
+    totalParc = 1;
   } else {
-    totalParc = parseInt(tp) || 1;
-    parcStr = '';
+    const tpStr = String(tp || '1').trim();
+    if(tpStr.includes('/')){
+      const parts = tpStr.split('/');
+      // Checa se é realmente parcela (ex: "1/3") e não data serializada
+      const n1 = parseInt(parts[0]), n2 = parseInt(parts[1]);
+      if(!isNaN(n1) && !isNaN(n2) && n2 <= 100) {
+        parcStr = tpStr;
+        totalParc = n2;
+      } else {
+        parcStr = '?/?'; totalParc = 1;
+      }
+    } else {
+      totalParc = parseInt(tpStr) || 1;
+      parcStr = '';
+    }
   }
   return {
     id: Number(r.id),
@@ -708,16 +724,43 @@ function calcularParcelas(compra){
   return parcelas;
 }
 
-// Retorna todas as parcelas que caem no mês/ano selecionado, com dados da compra original
-function parcelasDoMes(mes,ano){
-  const out=[];
-  COMPRAS.forEach(c=>{
-    const parcelas=calcularParcelas(c);
-    parcelas.forEach(p=>{
-      if(p.mes===mes && p.ano===ano){
-        out.push({...p,compraId:c.id,desc:c.desc,cat:c.cat,forma:c.forma,resp:c.resp,dataCompra:c.data});
-      }
-    });
+// Retorna todas as parcelas que caem no mês/ano selecionado.
+// No modelo VBA (dados reais da planilha): cada linha já tem a data certa da parcela.
+// A data da linha determina em qual fatura ela cai (via regra de fechamento do cartão).
+function parcelasDoMes(mes, ano){
+  const out = [];
+  COMPRAS.forEach(c => {
+    if(!c.data) return;
+    const d = new Date(c.data + 'T00:00:00');
+    if(isNaN(d)) return;
+
+    const cartao = CARTOES.find(x => x.nome === c.forma);
+
+    // Calcula o mês/ano de fatura desta parcela
+    let mesFatura = d.getMonth();
+    let anoFatura = d.getFullYear();
+    if(cartao && d.getDate() > cartao.fecham){
+      mesFatura++;
+      if(mesFatura > 11){ mesFatura = 0; anoFatura++; }
+    }
+
+    if(mesFatura === mes && anoFatura === ano){
+      const parcParts = c._parcela ? c._parcela.split('/') : [];
+      out.push({
+        numero:   parcParts.length === 2 ? (parseInt(parcParts[0]) || 1) : 1,
+        total:    parcParts.length === 2 ? (parseInt(parcParts[1]) || 1) : c.totalParc,
+        mes, ano,
+        valor:    c.valorTotal,
+        vencDia:  cartao ? cartao.venc : null,
+        cartaoId: cartao ? cartao.id   : null,
+        compraId: c.id,
+        desc:     c.desc,
+        cat:      c.cat,
+        forma:    c.forma,
+        resp:     c.resp,
+        dataCompra: c.data
+      });
+    }
   });
   return out;
 }
