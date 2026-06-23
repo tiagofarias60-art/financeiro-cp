@@ -625,6 +625,7 @@ async function loadFromSheets(){
     rebuildColorPicker();
     renderAll();
     buildCharts();
+    rebuildFormaSelects(); // garante select populado mesmo se usuário já está na tela
     document.getElementById('loading-screen').style.display='none';
   }catch(err){
     console.error('Erro ao carregar dados da planilha:', err);
@@ -711,7 +712,7 @@ function renderAll(){
   recalc();
 }
 
-function goTo(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');btn.classList.add('active');if(id==='resumocartoes')renderResumoCartoes();if(id==='historico')renderHist();if(id==='devedores')renderPessoasTabs();}
+function goTo(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');btn.classList.add('active');if(id==='resumocartoes')renderResumoCartoes();if(id==='historico')renderHist();if(id==='devedores')renderPessoasTabs();if(id==='novo'||id==='fixos')rebuildFormaSelects();}
 
 function changeMonthKey(key){
   const [y,m]=key.split('-').map(Number);
