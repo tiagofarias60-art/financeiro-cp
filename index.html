@@ -192,35 +192,115 @@ input[type=number]{-moz-appearance:textfield;}
 
 <!-- DASHBOARD -->
 <div id="view-dashboard" class="view active">
-  <div class="ph"><div class="ph-title">Painel — <span class="mes-label">Junho 2026</span></div><div class="ph-sub">Visão consolidada do mês. Dados fictícios.</div></div>
-  <div class="cards">
-    <div class="card"><div class="card-lbl">Entradas líquidas</div><div class="card-val g mono">R$ 8.708,70</div><div class="card-sub">Tiago + Jade + extras</div></div>
-    <div class="card"><div class="card-lbl">Total saídas</div><div class="card-val r mono">R$ 7.214,32</div><div class="card-sub">Fixos + variáveis + cartões</div></div>
-    <div class="card"><div class="card-val g mono" style="margin-top:8px">R$ 1.494,38</div><div class="card-lbl" style="margin-top:4px;margin-bottom:0">Saldo final</div></div>
-    <div class="card"><div class="card-lbl">Poupado este mês</div><div class="card-val a mono">R$ 1.200,00</div><div class="card-sub">3 depósitos</div></div>
+  <div class="ph"><div class="ph-title">Painel — <span class="mes-label">Junho 2026</span></div><div class="ph-sub">Visão consolidada do mês.</div></div>
+
+  <!-- CARDS DO TOPO: cada card tem linha Previsto e Real -->
+  <div class="cards" style="grid-template-columns:repeat(4,1fr);">
+    <div class="card">
+      <div class="card-lbl">Entradas líquidas</div>
+      <div class="card-val g mono" id="p-ent-prev">R$ 0,00</div>
+      <div class="card-sub">Previsto</div>
+      <div class="card-val g mono" id="p-ent-real" style="margin-top:6px;font-size:13px;">R$ 0,00</div>
+      <div class="card-sub">Real (igual)</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Total saídas</div>
+      <div class="card-val r mono" id="p-sai-prev">R$ 0,00</div>
+      <div class="card-sub">Previsto</div>
+      <div class="card-val r mono" id="p-sai-real" style="margin-top:6px;font-size:13px;">R$ 0,00</div>
+      <div class="card-sub" id="p-sai-real-sub">Real</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Saldo final</div>
+      <div class="card-val mono" id="p-sf-prev" style="margin-top:4px;">R$ 0,00</div>
+      <div class="card-sub">Previsto</div>
+      <div class="card-val mono" id="p-sf-real" style="margin-top:6px;font-size:13px;">R$ 0,00</div>
+      <div class="card-sub">Real</div>
+    </div>
+    <div class="card">
+      <div class="card-lbl">Poupado este mês</div>
+      <div class="card-val a mono" id="p-poup">R$ 0,00</div>
+      <div class="card-sub" id="p-poup-sub">0 depósitos</div>
+    </div>
   </div>
-  <div class="two-col">
-    <div class="sec">
-      <div class="sec-hd"><span class="sec-title">Fluxo — Dia 10</span><span class="badge g">Sobra R$ 2.892</span></div>
-      <div style="padding:12px 18px;">
-        <div class="srow"><span>Saldo mês anterior</span><span class="mono" style="color:var(--accent)" id="painel-saldo-ant">+ R$ 0,00</span></div>
-        <div class="srow"><span>Entradas até dia 10</span><span class="mono" style="color:var(--green)">+ R$ 4.449,27</span></div>
-        <div class="srow"><span>Gastos fixos dia 10</span><span class="mono" style="color:var(--red)">− R$ 2.613,52</span></div>
-        <div class="srow"><span>Cartões venc. dia 10</span><span class="mono" style="color:var(--red)">− R$ 943,75</span></div>
-        <div class="srow"><span>Sobra → vai para dia 24</span><span class="mono" style="color:var(--green)">R$ 2.892,00</span></div>
+
+  <!-- FLUXO DIA 10: Previsto | Real lado a lado -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">Fluxo — Dia 10</span>
+      <div style="display:flex;gap:8px;">
+        <span class="badge g" id="p-badge-d10-prev">Previsto R$ 0</span>
+        <span class="badge" style="background:rgba(99,102,241,.15);color:#818cf8;" id="p-badge-d10-real">Real R$ 0</span>
       </div>
     </div>
-    <div class="sec">
-      <div class="sec-hd"><span class="sec-title">Fluxo — Dia 24</span><span class="badge y">Saldo R$ 3.204</span></div>
-      <div style="padding:12px 18px;">
-        <div class="srow"><span>Sobra do dia 10</span><span class="mono" style="color:var(--accent)">+ R$ 2.892,00</span></div>
-        <div class="srow"><span>Entradas de dia 20+</span><span class="mono" style="color:var(--green)">+ R$ 4.259,43</span></div>
-        <div class="srow"><span>Gastos fixos dia 24</span><span class="mono" style="color:var(--red)">− R$ 2.718,54</span></div>
-        <div class="srow"><span>Cartões venc. dia 24</span><span class="mono" style="color:var(--red)">− R$ 1.228,89</span></div>
-        <div class="srow"><span>Saldo final</span><span class="mono" style="color:var(--yellow)">R$ 3.203,90</span></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:0 18px 14px;">
+      <!-- Cabeçalho -->
+      <div style="padding:8px 0 4px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);"></div>
+      <div style="padding:8px 0 4px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);text-align:right;">Previsto</div>
+      <div style="padding:8px 0 4px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#818cf8;text-align:right;">Real</div>
+      <!-- Linhas -->
+      <div class="srow" style="grid-column:span 3;display:contents;">
+        <span style="padding:5px 0;color:var(--text2);">Saldo mês anterior</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--accent);" id="p-saldo-ant-prev">+ R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--accent);" id="p-saldo-ant-real">+ R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--text2);">Entradas até dia 10</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d10-prev">+ R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d10-real">+ R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--text2);">Débitos até dia 10</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d10-prev">− R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d10-real">− R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--text2);">Cartões venc. dia 10</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d10-prev">− R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d10-real">− R$ 0,00</span>
+
+        <span style="padding:7px 0;color:var(--text);font-weight:600;border-top:1px solid var(--border);margin-top:4px;">Sobra → dia 24</span>
+        <span class="mono" style="text-align:right;padding:7px 0;font-weight:700;border-top:1px solid var(--border);margin-top:4px;color:var(--green);" id="p-sobra-d10-prev">R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:7px 0;font-weight:700;border-top:1px solid var(--border);margin-top:4px;color:#818cf8;" id="p-sobra-d10-real">R$ 0,00</span>
       </div>
     </div>
   </div>
+
+  <!-- FLUXO DIA 24: Previsto | Real lado a lado -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">Fluxo — Dia 24</span>
+      <div style="display:flex;gap:8px;">
+        <span class="badge y" id="p-badge-d24-prev">Previsto R$ 0</span>
+        <span class="badge" style="background:rgba(99,102,241,.15);color:#818cf8;" id="p-badge-d24-real">Real R$ 0</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;padding:0 18px 14px;">
+      <div style="padding:8px 0 4px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);"></div>
+      <div style="padding:8px 0 4px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);text-align:right;">Previsto</div>
+      <div style="padding:8px 0 4px;font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#818cf8;text-align:right;">Real</div>
+      <div style="grid-column:span 3;display:contents;">
+        <span style="padding:5px 0;color:var(--text2);">Sobra do dia 10</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--accent);" id="p-sobra-d10b-prev">+ R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:#818cf8;" id="p-sobra-d10b-real">+ R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--text2);">Entradas dia 11–24</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d24-prev">+ R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d24-real">+ R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--text2);">Débitos até dia 24</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d24-prev">− R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d24-real">− R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--text2);">Cartões venc. dia 24</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d24-prev">− R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d24-real">− R$ 0,00</span>
+
+        <span style="padding:7px 0;color:var(--text);font-weight:600;border-top:1px solid var(--border);margin-top:4px;">Saldo final</span>
+        <span class="mono" style="text-align:right;padding:7px 0;font-weight:700;border-top:1px solid var(--border);margin-top:4px;" id="p-sf-d24-prev">R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:7px 0;font-weight:700;border-top:1px solid var(--border);margin-top:4px;" id="p-sf-d24-real">R$ 0,00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRÁFICOS -->
   <div class="two-col">
     <div class="sec">
       <div class="sec-hd"><span class="sec-title">Gastos por categoria</span></div>
@@ -247,8 +327,6 @@ input[type=number]{-moz-appearance:textfield;}
     </div>
   </div>
 </div>
-
-<!-- RESUMO DE CARTÕES -->
 <div id="view-resumocartoes" class="view">
   <div class="ph" style="display:flex;justify-content:space-between;align-items:flex-start;">
     <div><div class="ph-title">Resumo de cartões</div><div class="ph-sub">Total calculado pelos lançamentos vs. valor real da fatura, por cartão.</div></div>
@@ -465,7 +543,7 @@ input[type=number]{-moz-appearance:textfield;}
 </div>
 
 </main>
-</div>
+</div><!-- /app-body -->
 
 <!-- MODAL NOVO MÊS -->
 <div class="moverlay" id="m-novo-mes">
@@ -511,7 +589,7 @@ let mesSel=5,mesAno=2026,poupTipo='deposito';
 
 // ═══ CONEXÃO COM GOOGLE SHEETS ═══
 // URL da implantação do Apps Script (Implantar > Nova implantação > App da Web)
-const API_URL = 'https://script.google.com/macros/s/AKfycbzfXddqj-7xses77K8cm2bSbUqu1B4edf9KEN4cp1yckmgzAuJ244KKbvVoP9v-A8bI/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzs_m6NboAKy8br8iJ3h-6eCQFZFegLUjL8wY57qEjgz4513F71Q5JnP-HXK2AT-3S-/exec';
 const API_SECRET = '';
 let SYNC_OK = true;
 
@@ -725,41 +803,73 @@ function calcularParcelas(compra){
 }
 
 // Retorna todas as parcelas que caem no mês/ano selecionado.
-// No modelo VBA (dados reais da planilha): cada linha já tem a data certa da parcela.
-// A data da linha determina em qual fatura ela cai (via regra de fechamento do cartão).
+// parcelasDoMes — suporta dois formatos de dados:
+//
+// FORMATO NOVO (VBA / novo lançamento do app):
+//   _parcela = "2/3", totalParc = 3 (ou 1 quando veio da planilha como "1/3")
+//   → a DATA da linha JÁ É a data da parcela; usa ela diretamente
+//
+// FORMATO ANTIGO (importado do CSV):
+//   _parcela = "", totalParc = 12 (só o total, sem indicar qual parcela)
+//   → usa calcularParcelas() para expandir as N parcelas a partir da data da compra
+//
 function parcelasDoMes(mes, ano){
   const out = [];
+
   COMPRAS.forEach(c => {
     if(!c.data) return;
     const d = new Date(c.data + 'T00:00:00');
     if(isNaN(d)) return;
 
     const cartao = CARTOES.find(x => x.nome === c.forma);
+    const isFormatoNovo = c._parcela && c._parcela !== '' && c._parcela !== '?/?';
 
-    // Calcula o mês/ano de fatura desta parcela
-    let mesFatura = d.getMonth();
-    let anoFatura = d.getFullYear();
-    if(cartao && d.getDate() > cartao.fecham){
-      mesFatura++;
-      if(mesFatura > 11){ mesFatura = 0; anoFatura++; }
-    }
+    if(isFormatoNovo){
+      // ── Formato novo: data da linha = data da parcela ──
+      let mesFatura = d.getMonth(), anoFatura = d.getFullYear();
+      if(cartao && d.getDate() > cartao.fecham){
+        mesFatura++; if(mesFatura > 11){ mesFatura = 0; anoFatura++; }
+      }
+      if(mesFatura === mes && anoFatura === ano){
+        const parts = c._parcela.split('/');
+        out.push({
+          numero:   parseInt(parts[0]) || 1,
+          total:    parseInt(parts[1]) || 1,
+          mes, ano,
+          valor:    c.valorTotal,
+          vencDia:  cartao ? cartao.venc : null,
+          cartaoId: cartao ? cartao.id   : null,
+          compraId: c.id, desc: c.desc, cat: c.cat,
+          forma: c.forma, resp: c.resp, dataCompra: c.data
+        });
+      }
+    } else {
+      // ── Formato antigo: expande N parcelas a partir da data da compra ──
+      const totalParc = c.totalParc || 1;
+      const valorParc = c.valorTotal / totalParc;
 
-    if(mesFatura === mes && anoFatura === ano){
-      const parcParts = c._parcela ? c._parcela.split('/') : [];
-      out.push({
-        numero:   parcParts.length === 2 ? (parseInt(parcParts[0]) || 1) : 1,
-        total:    parcParts.length === 2 ? (parseInt(parcParts[1]) || 1) : c.totalParc,
-        mes, ano,
-        valor:    c.valorTotal,
-        vencDia:  cartao ? cartao.venc : null,
-        cartaoId: cartao ? cartao.id   : null,
-        compraId: c.id,
-        desc:     c.desc,
-        cat:      c.cat,
-        forma:    c.forma,
-        resp:     c.resp,
-        dataCompra: c.data
-      });
+      // Calcula o mês da 1ª parcela com base na regra de fechamento
+      let mesP1 = d.getMonth(), anoP1 = d.getFullYear();
+      if(cartao && d.getDate() > cartao.fecham){
+        mesP1++; if(mesP1 > 11){ mesP1 = 0; anoP1++; }
+      }
+
+      for(let i = 0; i < totalParc; i++){
+        const mP = (mesP1 + i) % 12;
+        const aP = anoP1 + Math.floor((mesP1 + i) / 12);
+        if(mP === mes && aP === ano){
+          out.push({
+            numero:   i + 1,
+            total:    totalParc,
+            mes, ano,
+            valor:    valorParc,
+            vencDia:  cartao ? cartao.venc : null,
+            cartaoId: cartao ? cartao.id   : null,
+            compraId: c.id, desc: c.desc, cat: c.cat,
+            forma: c.forma, resp: c.resp, dataCompra: c.data
+          });
+        }
+      }
     }
   });
   return out;
@@ -787,11 +897,6 @@ function renderAll(){
   renderPainel();
 }
 
-function renderPainel(){
-  const saldo = parseMoneyBR(document.getElementById('saldo-ant')?.value || '0');
-  const el = document.getElementById('painel-saldo-ant');
-  if(el) el.textContent = '+ R$ ' + fmt(saldo);
-}
 
 function goTo(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');btn.classList.add('active');if(id==='resumocartoes')renderResumoCartoes();if(id==='historico')renderHist();if(id==='devedores')renderPessoasTabs();if(id==='novo'||id==='fixos')rebuildFormaSelects();}
 
@@ -1063,14 +1168,171 @@ async function saveEmp(){
   await apiPost('addEmprestimo',{de_quem:d,data,quem_recebe:resp,valor:v});
 }
 function recalc(){
-  const brt=SALARIOS.reduce((a,s)=>a+s.bruto,0),liq=SALARIOS.reduce((a,s)=>a+s.liq,0);
+  const brt=SALARIOS.reduce((a,s)=>a+s.bruto,0);
+  const liq=SALARIOS.reduce((a,s)=>a+s.liq,0);
   const ext=EXTRAS.reduce((a,e)=>a+e.valor,0)+EMPR.reduce((a,e)=>a+e.valor,0);
   document.getElementById('ent-bruto').textContent='R$ '+fmt(brt);
   document.getElementById('ent-liq').textContent='R$ '+fmt(liq);
   document.getElementById('ent-desc').textContent='− R$ '+fmt(brt-liq);
   document.getElementById('ent-extr').textContent='R$ '+fmt(ext);
+  renderPainel();
 }
 
+function renderPainel(){
+  const set = (id,val) => { const el=document.getElementById(id); if(el) el.textContent=val; };
+  const setColor = (id,pos) => { const el=document.getElementById(id); if(el) el.style.color=pos?'var(--green)':'var(--red)'; };
+
+  // ── Classificação de formas ──
+  const FORMAS_DEBITO = ['Débito Nubank','Débito Itaú','Dinheiro'];
+  const isDebito = forma => FORMAS_DEBITO.includes(forma);
+  const isCartaoCredito = forma => !isDebito(forma) && forma !== '' && CARTOES.some(c=>c.nome===forma);
+
+  // ── Saldo anterior ──
+  const saldoAnt = parseMoneyBR(document.getElementById('saldo-ant')?.value || '0');
+
+  // ── Entradas por janela ──
+  // Janela Dia 10: recebido no mês atual dia 1-10, OU no mês anterior dia 25-31
+  // Janela Dia 24: recebido no mês atual dia 11-24
+  // Fora: recebido dia 25-31 do mês atual → vai pro mês seguinte
+  const mesAtual = mesSel, anoAtual = mesAno;
+  const mesPrev = mesSel > 0 ? mesSel - 1 : 11;
+  const anoPrev = mesSel > 0 ? mesAno : mesAno - 1;
+
+  function diaEntrada(dataStr){
+    if(!dataStr) return null;
+    const d = new Date(dataStr+'T00:00:00');
+    if(isNaN(d)) return null;
+    return {dia: d.getDate(), mes: d.getMonth(), ano: d.getFullYear()};
+  }
+
+  function janelaEntrada(dataStr){
+    const info = diaEntrada(dataStr);
+    if(!info) return null;
+    // Mês anterior dia 25-31 → janela D10 do mês atual
+    if(info.mes === mesPrev && info.ano === anoPrev && info.dia >= 25) return 'd10';
+    // Mês atual dia 1-10 → janela D10
+    if(info.mes === mesAtual && info.ano === anoAtual && info.dia >= 1 && info.dia <= 10) return 'd10';
+    // Mês atual dia 11-24 → janela D24
+    if(info.mes === mesAtual && info.ano === anoAtual && info.dia >= 11 && info.dia <= 24) return 'd24';
+    // Resto → fora do mês atual
+    return null;
+  }
+
+  const entD10 = [...SALARIOS, ...EXTRAS, ...EMPR].filter(e=>janelaEntrada(e.data||e.dataStr)===  'd10').reduce((a,e)=>a+(e.liq||e.valor||0), 0);
+  const entD24 = [...SALARIOS, ...EXTRAS, ...EMPR].filter(e=>janelaEntrada(e.data||e.dataStr)==='d24').reduce((a,e)=>a+(e.liq||e.valor||0), 0);
+  const totalEntradas = entD10 + entD24;
+
+  // ── Débitos variáveis do mês (compras em débito) ──
+  // Dia 1-10 → D10; Dia 11-24 → D24; Dia 25-31 → próximo mês (ignorar aqui)
+  const parcMes = parcelasDoMes(mesAtual, anoAtual);
+  const debVar10 = parcMes.filter(p=>isDebito(p.forma)).filter(p=>{
+    const d=new Date((p.dataCompra||'')+'T00:00:00'); return !isNaN(d)&&d.getDate()<=10;
+  }).reduce((a,p)=>a+p.valor,0);
+  const debVar24 = parcMes.filter(p=>isDebito(p.forma)).filter(p=>{
+    const d=new Date((p.dataCompra||'')+'T00:00:00'); return !isNaN(d)&&d.getDate()>10&&d.getDate()<=24;
+  }).reduce((a,p)=>a+p.valor,0);
+
+  // ── Débitos fixos do mês ──
+  const fixDeb10 = FIXOS.filter(f=>isDebito(f.forma)&&f.venc<=10).reduce((a,f)=>a+f.valor,0);
+  const fixDeb24 = FIXOS.filter(f=>isDebito(f.forma)&&f.venc>10).reduce((a,f)=>a+f.valor,0);
+
+  const debD10 = debVar10 + fixDeb10;
+  const debD24 = debVar24 + fixDeb24;
+
+  // ── Cartões por vencimento ──
+  // Previsto = calculado; Real = fatura digitada se existir, senão calculado com flag
+  function cartaoValor(cartaoId, useReal){
+    const calc = somaCartaoMes(cartaoId, mesAtual, anoAtual);
+    if(!useReal) return {val:calc, isReal:true};
+    const chave = `${cartaoId}|${anoAtual}|${mesAtual}`;
+    const realStr = FATURAS_REAIS[chave];
+    if(realStr !== undefined && realStr !== null && realStr !== ''){
+      return {val:parseMoneyBR(realStr), isReal:true};
+    }
+    return {val:calc, isReal:false}; // fallback para calculado
+  }
+
+  const cart10Prev = CARTOES.filter(c=>c.venc<=10).reduce((a,c)=>a+cartaoValor(c.id,false).val,0);
+  const cart24Prev = CARTOES.filter(c=>c.venc>10).reduce((a,c)=>a+cartaoValor(c.id,false).val,0);
+
+  let cart10RealTotal=0, cart10FaltandoDigitar=0;
+  CARTOES.filter(c=>c.venc<=10).forEach(c=>{
+    const r=cartaoValor(c.id,true);
+    cart10RealTotal+=r.val;
+    if(!r.isReal) cart10FaltandoDigitar++;
+  });
+  let cart24RealTotal=0, cart24FaltandoDigitar=0;
+  CARTOES.filter(c=>c.venc>10).forEach(c=>{
+    const r=cartaoValor(c.id,true);
+    cart24RealTotal+=r.val;
+    if(!r.isReal) cart24FaltandoDigitar++;
+  });
+  const totalCartFaltando = cart10FaltandoDigitar + cart24FaltandoDigitar;
+  const totalCartoes = CARTOES.length;
+
+  // ── Fluxo Previsto ──
+  const sobraD10Prev = saldoAnt + entD10 - debD10 - cart10Prev;
+  const sfPrev       = sobraD10Prev + entD24 - debD24 - cart24Prev;
+
+  // ── Fluxo Real ──
+  const sobraD10Real = saldoAnt + entD10 - debD10 - cart10RealTotal;
+  const sfReal       = sobraD10Real + entD24 - debD24 - cart24RealTotal;
+
+  // ── Total saídas ──
+  const totalSaidasPrev = debD10 + debD24 + cart10Prev  + cart24Prev;
+  const totalSaidasReal = debD10 + debD24 + cart10RealTotal + cart24RealTotal;
+
+  // ── Poupança ──
+  const depMes = POUP.filter(p=>p.mov==='deposito').reduce((a,p)=>a+p.valor,0);
+  const nDep   = POUP.filter(p=>p.mov==='deposito').length;
+
+  // ── Atualiza HTML ──
+  // Cards topo
+  set('p-ent-prev', 'R$ '+fmt(totalEntradas));
+  set('p-ent-real', 'R$ '+fmt(totalEntradas));
+  set('p-sai-prev', 'R$ '+fmt(totalSaidasPrev));
+  set('p-sai-real', 'R$ '+fmt(totalSaidasReal));
+  const saiRealSub = totalCartFaltando > 0
+    ? `⚠️ ${totalCartoes-totalCartFaltando} de ${totalCartoes} faturas digitadas`
+    : 'Real (completo)';
+  set('p-sai-real-sub', saiRealSub);
+  set('p-sf-prev', 'R$ '+fmt(sfPrev)); setColor('p-sf-prev', sfPrev>=0);
+  set('p-sf-real', 'R$ '+fmt(sfReal)); setColor('p-sf-real', sfReal>=0);
+  set('p-poup',    'R$ '+fmt(depMes));
+  set('p-poup-sub', nDep+' depósito'+(nDep!==1?'s':''));
+
+  // Fluxo Dia 10
+  set('p-saldo-ant-prev', '+ R$ '+fmt(saldoAnt));
+  set('p-saldo-ant-real', '+ R$ '+fmt(saldoAnt));
+  set('p-ent-d10-prev',   '+ R$ '+fmt(entD10));
+  set('p-ent-d10-real',   '+ R$ '+fmt(entD10));
+  set('p-deb-d10-prev',   '− R$ '+fmt(debD10));
+  set('p-deb-d10-real',   '− R$ '+fmt(debD10));
+  set('p-cart-d10-prev',  '− R$ '+fmt(cart10Prev));
+  set('p-cart-d10-real',  (cart10FaltandoDigitar>0?'⚠️ ':'')+'− R$ '+fmt(cart10RealTotal));
+  set('p-sobra-d10-prev', 'R$ '+fmt(sobraD10Prev)); setColor('p-sobra-d10-prev', sobraD10Prev>=0);
+  set('p-sobra-d10-real', 'R$ '+fmt(sobraD10Real)); setColor('p-sobra-d10-real', sobraD10Real>=0);
+  set('p-badge-d10-prev', 'Previsto R$ '+fmt(sobraD10Prev));
+  set('p-badge-d10-real', 'Real R$ '+fmt(sobraD10Real));
+
+  // Fluxo Dia 24
+  set('p-sobra-d10b-prev','+ R$ '+fmt(sobraD10Prev));
+  set('p-sobra-d10b-real','+ R$ '+fmt(sobraD10Real));
+  set('p-ent-d24-prev',   '+ R$ '+fmt(entD24));
+  set('p-ent-d24-real',   '+ R$ '+fmt(entD24));
+  set('p-deb-d24-prev',   '− R$ '+fmt(debD24));
+  set('p-deb-d24-real',   '− R$ '+fmt(debD24));
+  set('p-cart-d24-prev',  '− R$ '+fmt(cart24Prev));
+  set('p-cart-d24-real',  (cart24FaltandoDigitar>0?'⚠️ ':'')+'− R$ '+fmt(cart24RealTotal));
+  set('p-sf-d24-prev',    'R$ '+fmt(sfPrev)); setColor('p-sf-d24-prev', sfPrev>=0);
+  set('p-sf-d24-real',    'R$ '+fmt(sfReal)); setColor('p-sf-d24-real', sfReal>=0);
+  set('p-badge-d24-prev', 'Previsto R$ '+fmt(sfPrev));
+  set('p-badge-d24-real', 'Real R$ '+fmt(sfReal));
+
+  // Saldo anterior no campo de entrada (sincroniza)
+  const saEl = document.getElementById('painel-saldo-ant');
+  if(saEl) saEl.textContent = '+ R$ '+fmt(saldoAnt);
+}
 // ── BALANÇO POR PESSOA (sempre mostra todas as pessoas cadastradas, mesmo com 0 no mês) ──
 const PESSOAS_CADASTRO=['Mariana','Roberta','Francisco','Jacó','Tiago','Jade'];
 function pessoasComParcelas(){
