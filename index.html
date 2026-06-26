@@ -1048,7 +1048,7 @@ function renderHist(){
   if(fCartao)rows=rows.filter(r=>r.forma===fCartao);
   if(fResp)rows=rows.filter(r=>r.resp===fResp);
   if(fCat)rows=rows.filter(r=>r.cat===fCat);
-  rows.sort((a,b)=>a.dataCompra<b.dataCompra?1:-1);
+  rows.sort((a,b)=>b.compraId-a.compraId);
   document.getElementById('hist-ct').textContent=rows.length+' registros';
   document.getElementById('hist-tbody').innerHTML=rows.map(r=>`<tr><td class="mono" style="color:var(--text3)">${fmtD(r.dataCompra)}</td><td class="P">${r.desc}</td><td><span class="tag">${r.cat}</span></td><td>${fTag(r.forma)}</td><td class="mono">${r.numero}/${r.total}</td><td>${rTag(r.resp)}</td><td class="mono R">R$ ${fmt(r.valor)}</td><td><button class="bico" onclick="excluirCompra(${r.compraId})" title="Excluir compra inteira">✕</button></td></tr>`).join('');
   document.getElementById('hist-total').textContent='R$ '+fmt(rows.reduce((a,b)=>a+b.valor,0));
