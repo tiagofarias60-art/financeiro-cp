@@ -1561,9 +1561,21 @@ function maskMoney(el){
   el.value=intFormatted+','+decPart;
 }
 function parseMoneyBR(str){
-  if(!str)return 0;
-  const n=parseFloat(String(str).replace(/\./g,'').replace(',','.'));
-  return isNaN(n)?0:n;
+  if(str === null || str === undefined || str === '') return 0;
+  // Se já é número (float JS vindo da API), retorna direto
+  if(typeof str === 'number') return isNaN(str) ? 0 : str;
+  const s = String(str).trim();
+  // Detecta se é formato BR (tem vírgula como decimal): ex "247,39" ou "1.234,56"
+  // vs formato JS (ponto como decimal): ex "247.39" ou "1234.56"
+  if(s.includes(',')) {
+    // Formato BR: remove pontos de milhar, troca vírgula por ponto
+    const n = parseFloat(s.replace(/\./g,'').replace(',','.'));
+    return isNaN(n) ? 0 : n;
+  } else {
+    // Formato JS com ponto decimal — não remover o ponto
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
 }
 function fmt(v){return Math.abs(parseFloat(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtD(d){return d?d.split('-').reverse().slice(0,2).join('/'):'—';}
