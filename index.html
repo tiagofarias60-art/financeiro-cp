@@ -1069,8 +1069,14 @@ function renderFixos(){
 }
 async function deleteFixo(i){
   const item=FIXOS[i];
-  FIXOS.splice(i,1);renderFixos();
-  if(item._row) await apiPost('deleteFixo',{_row:item._row});
+  if(!item._row){
+    // Item ainda não salvo na planilha ou _row não encontrado
+    FIXOS.splice(i,1);renderFixos();renderPainel();
+    return;
+  }
+  FIXOS.splice(i,1);renderFixos();renderPainel();
+  const res = await apiPost('deleteFixo',{_row:item._row});
+  if(!res.ok) console.error('Erro ao excluir fixo da planilha, _row=', item._row, res);
 }
 function startEdit(el,idx){
   const inp=document.createElement('input');inp.className='editinp';inp.type='text';inp.inputMode='decimal';inp.value=fmt(FIXOS[idx].valor);
@@ -1081,6 +1087,7 @@ function startEdit(el,idx){
     if(v>0){
       FIXOS[idx].valor=v;
       renderFixos();
+      renderPainel(); // Bug 1: atualiza o painel após editar valor
       const item=FIXOS[idx];
       if(item._row) await apiPost('updateFixo',{_row:item._row,descricao:item.desc,categoria:item.cat,valor:v,dia_vencimento:item.venc,responsavel:item.resp,forma_pagamento:item.forma});
     } else { renderFixos(); }
@@ -1093,8 +1100,11 @@ async function saveFixo(){
   const cat=document.getElementById('fa-cat').value,resp=document.getElementById('fa-resp').value,forma=document.getElementById('fa-forma').value;
   const novoFixo={desc,cat,valor:val,venc,resp,forma};
   FIXOS.push(novoFixo);
-  document.getElementById('fixos-add').classList.remove('open');['fa-desc','fa-val','fa-venc'].forEach(id=>document.getElementById(id).value='');renderFixos();
-  await apiPost('addFixo',{descricao:desc,categoria:cat,valor:val,dia_vencimento:venc,responsavel:resp,forma_pagamento:forma});
+  document.getElementById('fixos-add').classList.remove('open');['fa-desc','fa-val','fa-venc'].forEach(id=>document.getElementById(id).value='');
+  renderFixos();renderPainel();
+  const res = await apiPost('addFixo',{descricao:desc,categoria:cat,valor:val,dia_vencimento:venc,responsavel:resp,forma_pagamento:forma});
+  // Após salvar, recarrega os fixos para obter o _row correto da planilha
+  if(res.ok) loadFromSheets();
 }
 
 // ── ENTRADAS ──
