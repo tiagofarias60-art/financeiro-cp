@@ -199,7 +199,6 @@ input[type=number]{-moz-appearance:textfield;}
   <div class="nav-section">
     <div class="nav-label">Lançamentos</div>
     <button class="nav-item" onclick="goTo('novo',this)"><span class="icon">＋</span>Novo lançamento</button>
-    <button class="nav-item" onclick="goTo('historico',this)"><span class="icon">☰</span>Histórico</button>
     <button class="nav-item" onclick="goTo('fixos',this)"><span class="icon">📌</span>Gastos fixos</button>
   </div>
   <div class="nav-section">
@@ -412,7 +411,23 @@ input[type=number]{-moz-appearance:textfield;}
     </div>
   </div>
 
-  <!-- LISTA GLOBAL DE COMPRAS (igual à planilha Excel, sem filtro de mês) -->
+  <!-- HISTÓRICO INTEGRADO (substituindo lista "Todos os lançamentos" e a tela separada) -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">Histórico — <span class="mes-label">Junho 2026</span></span>
+      <div class="sec-actions">
+        <select class="fs" id="hist-f-cartao" style="width:auto;" onchange="renderHist()"><option value="">Todos os cartões</option></select>
+        <select class="fs" id="hist-f-resp" style="width:auto;" onchange="renderHist()"><option value="">Todos resp.</option><option>Casal</option><option>Tiago</option><option>Jade</option><option>Mariana</option><option>Roberta</option><option>Francisco</option><option>Jacó</option></select>
+        <select class="fs" id="hist-f-cat" style="width:auto;" onchange="renderHist()"><option value="">Todas categorias</option><option>Alimentação</option><option>Assinaturas</option><option>Casa</option><option>Compras</option><option>Dívidas</option><option>Estudos</option><option>Família</option><option>Festa</option><option>Fármacia e saúde</option><option>Lazer</option><option>Mercado</option><option>Pets</option><option>Presentes e doações</option><option>Restaurantes e bares</option><option>Tecnologia</option><option>Transporte</option><option>Viagem</option></select>
+        <span class="badge" id="hist-ct"></span>
+      </div>
+    </div>
+    <table><thead><tr><th>Data compra</th><th>Descrição</th><th>Categoria</th><th>Cartão</th><th>Parcela</th><th>Resp.</th><th class="R">Valor parcela</th><th></th></tr></thead>
+    <tbody id="hist-tbody"></tbody>
+    <tfoot><tr><td colspan="6">Total do filtro</td><td class="mono R" id="hist-total" style="color:var(--yellow)">—</td><td></td></tr></tfoot></table>
+  </div>
+
+  <!-- Lista global de todos os lançamentos (sem filtro de mês) -->
   <div class="sec">
     <div class="sec-hd">
       <span class="sec-title">Todos os lançamentos</span>
@@ -426,27 +441,6 @@ input[type=number]{-moz-appearance:textfield;}
       <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Forma</th><th>Parcelas</th><th>Resp.</th><th class="R">Valor total</th><th></th></tr></thead>
       <tbody id="ultlanc-tbody"></tbody>
     </table>
-  </div>
-</div>
-
-<!-- HISTÓRICO -->
-<div id="view-historico" class="view">
-  <div class="ph" style="display:flex;justify-content:space-between;align-items:flex-start;">
-    <div><div class="ph-title">Histórico — <span class="mes-label">Junho 2026</span></div><div class="ph-sub">Parcelas que caem neste mês. Filtre por cartão para ver a composição da fatura.</div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-hd">
-      <span class="sec-title">Lançamentos do mês</span>
-      <div class="sec-actions">
-        <select class="fs" id="hist-f-cartao" style="width:auto;" onchange="renderHist()"><option value="">Todos os cartões</option></select>
-        <select class="fs" id="hist-f-resp" style="width:auto;" onchange="renderHist()"><option value="">Todos resp.</option><option>Casal</option><option>Tiago</option><option>Jade</option><option>Mariana</option><option>Roberta</option></select>
-        <select class="fs" id="hist-f-cat" style="width:auto;" onchange="renderHist()"><option value="">Todas categorias</option><option>Mercado</option><option>Transporte</option><option>Compras</option><option>Alimentação</option><option>Pets</option><option>Fármacia e saúde</option></select>
-        <span class="badge" id="hist-ct"></span>
-      </div>
-    </div>
-    <table><thead><tr><th>Data compra</th><th>Descrição</th><th>Categoria</th><th>Cartão</th><th>Parcela</th><th>Resp.</th><th class="R">Valor parcela</th><th></th></tr></thead>
-    <tbody id="hist-tbody"></tbody>
-    <tfoot><tr><td colspan="6">Total do filtro</td><td class="mono R" id="hist-total" style="color:var(--yellow)">—</td><td></td></tr></tfoot></table>
   </div>
 </div>
 
@@ -942,7 +936,7 @@ function renderAll(){
 }
 
 
-function goTo(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');btn.classList.add('active');if(id==='resumocartoes')renderResumoCartoes();if(id==='historico')renderHist();if(id==='devedores')renderPessoasTabs();if(id==='novo'||id==='fixos')rebuildFormaSelects();}
+function goTo(id,btn){document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('view-'+id).classList.add('active');btn.classList.add('active');if(id==='resumocartoes')renderResumoCartoes();if(id==='devedores')renderPessoasTabs();if(id==='novo'||id==='fixos'){rebuildFormaSelects();renderHist();renderUltimosLanc();}}
 
 function changeMonthKey(key){
   const [y,m]=key.split('-').map(Number);
@@ -1098,11 +1092,34 @@ function renderHist(){
   document.getElementById('hist-total').textContent='R$ '+fmt(rows.reduce((a,b)=>a+b.valor,0));
 }
 async function excluirCompra(id){
-  if(!confirm('Excluir esta compra? Isso remove TODAS as parcelas dela, não só a deste mês.'))return;
-  COMPRAS=COMPRAS.filter(c=>c.id!==id);
+  const alvo = COMPRAS.find(c=>c.id===id);
+  if(!alvo) return;
+
+  // Encontra todas as parcelas relacionadas (mesma desc + forma + responsável + valor)
+  const relacionadas = COMPRAS.filter(c=>
+    c.desc === alvo.desc &&
+    c.forma === alvo.forma &&
+    c.resp === alvo.resp &&
+    Math.abs(c.valorTotal - alvo.valorTotal) < 0.01
+  );
+
+  const nParc = relacionadas.length;
+  const msg = nParc > 1
+    ? `Excluir "${alvo.desc}"?\n\nForam encontradas ${nParc} parcelas relacionadas. Todas serão excluídas.`
+    : `Excluir "${alvo.desc}"?\n\nEsse é um lançamento único (1 parcela).`;
+
+  if(!confirm(msg)) return;
+
+  // Remove todas do array em memória
+  const ids = new Set(relacionadas.map(c=>c.id));
+  COMPRAS = COMPRAS.filter(c=>!ids.has(c.id));
   recalcCategorias();
   renderHist();renderResumoCartoes();renderUltimosLanc();renderPessoasTabs();buildCharts();
-  await apiPost('deleteCompra', {id});
+
+  // Exclui todas na planilha (em sequência para não sobrecarregar a API)
+  for(const c of relacionadas){
+    await apiPost('deleteCompra', {id: c.id});
+  }
 }
 
 // ── GASTOS FIXOS ──
@@ -1158,8 +1175,16 @@ function selEntTab(tab,btn){
   document.getElementById('ent-ext').style.display=tab==='ext'?'block':'none';
   document.getElementById('ent-emp').style.display=tab==='emp'?'block':'none';
 }
+function entradaDoMes(dataStr){
+  if(!dataStr) return false;
+  const d = new Date(dataStr+'T00:00:00');
+  if(isNaN(d)) return false;
+  return d.getMonth()===mesSel && d.getFullYear()===mesAno;
+}
 function renderSalarios(){
-  document.getElementById('sal-tbody').innerHTML=SALARIOS.map((s,i)=>{
+  const doMes = SALARIOS.map((s,i)=>({...s,_idx:i})).filter(s=>entradaDoMes(s.data));
+  document.getElementById('sal-tbody').innerHTML=doMes.map(s=>{
+    const i=s._idx;
     const desc=s.bruto-s.liq;
     return `<tr><td class="P"><span class="tag ${s.pessoa==='Jade'?'ja':'ti'}">${s.pessoa}</span></td><td class="mono" style="color:var(--text3)">${fmtD(s.data)}</td><td class="R"><span class="editable mono" onclick="startSalEdit(this,${i},'bruto')">R$ ${fmt(s.bruto)}</span></td><td class="R"><span class="editable mono" style="color:var(--green)" onclick="startSalEdit(this,${i},'liq')">R$ ${fmt(s.liq)}</span></td><td class="mono R" style="color:var(--red)">− R$ ${fmt(desc)}</td><td><button class="bico" onclick="deleteSalario(${i})">✕</button></td></tr>`;
   }).join('');recalc();
@@ -1193,7 +1218,10 @@ async function saveSal(){
   document.getElementById('sal-add').classList.remove('open');renderSalarios();
   await apiPost('addSalario',{pessoa,data,valor_bruto:b,valor_liquido:l});
 }
-function renderExtras(){document.getElementById('ext-tbody').innerHTML=EXTRAS.map((e,i)=>`<tr><td class="P">${e.desc}</td><td class="mono" style="color:var(--text3)">${fmtD(e.data)}</td><td>${rTag(e.resp)}</td><td class="mono R" style="color:var(--green)">R$ ${fmt(e.valor)}</td><td><button class="bico" onclick="deleteExtra(${i})">✕</button></td></tr>`).join('');}
+function renderExtras(){
+  const doMes=EXTRAS.map((e,i)=>({...e,_idx:i})).filter(e=>entradaDoMes(e.data));
+  document.getElementById('ext-tbody').innerHTML=doMes.map(e=>`<tr><td class="P">${e.desc}</td><td class="mono" style="color:var(--text3)">${fmtD(e.data)}</td><td>${rTag(e.resp)}</td><td class="mono R" style="color:var(--green)">R$ ${fmt(e.valor)}</td><td><button class="bico" onclick="deleteExtra(${e._idx})">✕</button></td></tr>`).join('');
+}
 async function deleteExtra(i){
   const item=EXTRAS[i];
   EXTRAS.splice(i,1);renderExtras();recalc();
@@ -1207,7 +1235,10 @@ async function saveExt(){
   document.getElementById('ext-add').classList.remove('open');renderExtras();
   await apiPost('addExtra',{descricao:d,data,responsavel:resp,valor:v});
 }
-function renderEmpr(){document.getElementById('emp-tbody').innerHTML=EMPR.map((e,i)=>`<tr><td class="P">${e.de}</td><td class="mono" style="color:var(--text3)">${fmtD(e.data)}</td><td>${rTag(e.resp)}</td><td class="mono R" style="color:var(--accent)">R$ ${fmt(e.valor)}</td><td><button class="bico" onclick="deleteEmprestimo(${i})">✕</button></td></tr>`).join('');}
+function renderEmpr(){
+  const doMes=EMPR.map((e,i)=>({...e,_idx:i})).filter(e=>entradaDoMes(e.data));
+  document.getElementById('emp-tbody').innerHTML=doMes.map(e=>`<tr><td class="P">${e.de}</td><td class="mono" style="color:var(--text3)">${fmtD(e.data)}</td><td>${rTag(e.resp)}</td><td class="mono R" style="color:var(--accent)">R$ ${fmt(e.valor)}</td><td><button class="bico" onclick="deleteEmprestimo(${e._idx})">✕</button></td></tr>`).join('');
+}
 async function deleteEmprestimo(i){
   const item=EMPR[i];
   EMPR.splice(i,1);renderEmpr();recalc();
@@ -1222,9 +1253,12 @@ async function saveEmp(){
   await apiPost('addEmprestimo',{de_quem:d,data,quem_recebe:resp,valor:v});
 }
 function recalc(){
-  const brt=SALARIOS.reduce((a,s)=>a+s.bruto,0);
-  const liq=SALARIOS.reduce((a,s)=>a+s.liq,0);
-  const ext=EXTRAS.reduce((a,e)=>a+e.valor,0)+EMPR.reduce((a,e)=>a+e.valor,0);
+  const salMes = SALARIOS.filter(s=>entradaDoMes(s.data));
+  const extMes = EXTRAS.filter(e=>entradaDoMes(e.data));
+  const empMes = EMPR.filter(e=>entradaDoMes(e.data));
+  const brt=salMes.reduce((a,s)=>a+s.bruto,0);
+  const liq=salMes.reduce((a,s)=>a+s.liq,0);
+  const ext=extMes.reduce((a,e)=>a+e.valor,0)+empMes.reduce((a,e)=>a+e.valor,0);
   document.getElementById('ent-bruto').textContent='R$ '+fmt(brt);
   document.getElementById('ent-liq').textContent='R$ '+fmt(liq);
   document.getElementById('ent-desc').textContent='− R$ '+fmt(brt-liq);
