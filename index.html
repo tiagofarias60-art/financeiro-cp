@@ -537,10 +537,33 @@ input[type=number]{-moz-appearance:textfield;}
 <div id="view-devedores" class="view">
   <div class="ph" style="display:flex;justify-content:space-between;align-items:flex-start;">
     <div><div class="ph-title">Balanço por pessoa</div><div class="ph-sub">Parcelas em aberto que entram neste mês, agrupadas por cartão e vencimento.</div></div>
-    <button class="btn gh sm" onclick="gerarPdfBalanco()" style="margin-top:4px;">⬇ Gerar PDF</button>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn gh sm" onclick="abrirModalAddPessoa()">＋ Pessoa</button>
+      <button class="btn gh sm" onclick="gerarPdfBalanco()">⬇ Gerar PDF</button>
+    </div>
   </div>
-  <div class="ptabs" id="ptabs-container"></div>
-  <div id="dev-content" style="margin-top:14px;"></div>
+  <div style="display:flex;align-items:center;gap:12px;padding:0 0 16px;">
+    <label style="font-size:12px;color:var(--text3);font-weight:600;">Responsável:</label>
+    <select class="fs" id="sel-pessoa-balanco" style="width:200px;" onchange="selPessoaDropdown()">
+    </select>
+    <span class="badge r" id="badge-total-pessoa" style="font-size:13px;"></span>
+  </div>
+  <div id="dev-content"></div>
+</div>
+
+<!-- MODAL ADICIONAR PESSOA -->
+<div class="moverlay" id="m-add-pessoa">
+  <div class="modal">
+    <div class="modal-title">＋ Adicionar pessoa</div>
+    <div class="fg" style="margin-bottom:14px;">
+      <label class="fl">Nome</label>
+      <input type="text" class="fi" id="nova-pessoa-nome" placeholder="Ex: Ricardo" onkeydown="if(event.key==='Enter')salvarNovaPessoa()">
+    </div>
+    <div class="fa-bar">
+      <button class="btn gh" onclick="closeModal('m-add-pessoa')">Cancelar</button>
+      <button class="btn p" onclick="salvarNovaPessoa()">Adicionar</button>
+    </div>
+  </div>
 </div>
 
 <!-- POUPANÇA -->
@@ -1179,7 +1202,15 @@ function entradaDoMes(dataStr){
   if(!dataStr) return false;
   const d = new Date(dataStr+'T00:00:00');
   if(isNaN(d)) return false;
-  return d.getMonth()===mesSel && d.getFullYear()===mesAno;
+  const dia = d.getDate(), mes = d.getMonth(), ano = d.getFullYear();
+  // Dia 25-31 do mês anterior → aparece no mês atual (janela Dia 10)
+  const mesPrev = mesSel > 0 ? mesSel-1 : 11;
+  const anoPrev = mesSel > 0 ? mesAno : mesAno-1;
+  if(mes===mesPrev && ano===anoPrev && dia>=25) return true;
+  // Dia 1-24 do mês atual → aparece normalmente
+  if(mes===mesSel && ano===mesAno && dia>=1 && dia<=24) return true;
+  // Dia 25-31 do mês atual → vai pro mês seguinte, não aparece aqui
+  return false;
 }
 function renderSalarios(){
   const doMes = SALARIOS.map((s,i)=>({...s,_idx:i})).filter(s=>entradaDoMes(s.data));
@@ -1232,7 +1263,7 @@ async function saveExt(){
   if(!d||!v)return;
   const data=document.getElementById('ea-data').value,resp=document.getElementById('ea-resp').value;
   EXTRAS.push({desc:d,data,resp,valor:v});
-  document.getElementById('ext-add').classList.remove('open');renderExtras();
+  document.getElementById('ext-add').classList.remove('open');renderExtras();recalc();
   await apiPost('addExtra',{descricao:d,data,responsavel:resp,valor:v});
 }
 function renderEmpr(){
@@ -1249,7 +1280,7 @@ async function saveEmp(){
   if(!d||!v)return;
   const data=document.getElementById('empa-data').value,resp=document.getElementById('empa-resp').value;
   EMPR.push({de:d,data,resp,valor:v});
-  document.getElementById('emp-add').classList.remove('open');renderEmpr();
+  document.getElementById('emp-add').classList.remove('open');renderEmpr();recalc();
   await apiPost('addEmprestimo',{de_quem:d,data,quem_recebe:resp,valor:v});
 }
 function recalc(){
@@ -1422,30 +1453,66 @@ function renderPainel(){
   if(saEl) saEl.textContent = '+ R$ '+fmt(saldoAnt);
 }
 // ── BALANÇO POR PESSOA (sempre mostra todas as pessoas cadastradas, mesmo com 0 no mês) ──
-const PESSOAS_CADASTRO=['Mariana','Roberta','Francisco','Jacó','Tiago','Jade'];
+let PESSOAS_CADASTRO=['Mariana','Roberta','Francisco','Jacó','Tiago','Jade'];
+
 function pessoasComParcelas(){
   const pessoas={};
   PESSOAS_CADASTRO.forEach(n=>pessoas[n]=[]);
   parcelasDoMes(mesSel,mesAno).forEach(p=>{
-    if(p.resp==='Casal')return; // balanço de pessoa é só para terceiros/individuais
-    if(!pessoas[p.resp])pessoas[p.resp]=[]; // pessoa avulsa não cadastrada na lista fixa
+    if(p.resp==='Casal')return;
+    if(!pessoas[p.resp])pessoas[p.resp]=[];
     pessoas[p.resp].push(p);
   });
   return pessoas;
 }
-function renderPessoasTabs(){
-  const pessoas=pessoasComParcelas();
-  const nomes=Object.keys(pessoas);
-  const cont=document.getElementById('ptabs-container');
-  cont.innerHTML=nomes.map((n,i)=>{
-    const tot=pessoas[n].reduce((a,x)=>a+x.valor,0);
-    return `<button class="ptab ${i===0?'active':''}" onclick="selPessoa('${n}',this)">${n}${tot>0?` · R$ ${fmt(tot)}`:''}</button>`;
-  }).join('');
-  selPessoa(nomes[0],cont.querySelector('.ptab'));
+
+function rebuildPessoaSelects(){
+  // Atualiza o dropdown de balanço por pessoa
+  const sel = document.getElementById('sel-pessoa-balanco');
+  if(sel){
+    const cur = sel.value;
+    sel.innerHTML = PESSOAS_CADASTRO.map(n=>`<option value="${n}">${n}</option>`).join('');
+    if(PESSOAS_CADASTRO.includes(cur)) sel.value=cur;
+  }
+  // Atualiza o select de responsável no formulário de lançamento
+  ['f-resp','hist-f-resp','lanc-f-resp','sa-pessoa','ea-resp','empa-resp'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    // Mantém a option vazia/padrão e opções fixas + as pessoas cadastradas
+    const fixas = id==='f-resp'||id==='hist-f-resp'||id==='lanc-f-resp' ? ['','Casal'] : id==='sa-pessoa' ? [''] : [''];
+    const extras = PESSOAS_CADASTRO.filter(p=>p!=='Casal');
+    // Recria só as opções de pessoas (após as fixas)
+    const allOpts = [...el.options];
+    const hasFixas = allOpts.some(o=>o.value==='' || o.value==='Casal');
+    if(!hasFixas) return;
+    // Remove opções que não são mais válidas nem fixas
+    PESSOAS_CADASTRO.forEach(nome=>{
+      if(![...el.options].some(o=>o.value===nome)){
+        const opt=document.createElement('option');
+        opt.value=nome;opt.textContent=nome;
+        el.appendChild(opt);
+      }
+    });
+  });
 }
-function selPessoa(p,btn){
-  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('active'));if(btn)btn.classList.add('active');
+
+function renderPessoasTabs(){
+  rebuildPessoaSelects();
+  selPessoaDropdown();
+}
+
+function selPessoaDropdown(){
+  const sel = document.getElementById('sel-pessoa-balanco');
+  const nome = sel ? sel.value : PESSOAS_CADASTRO[0];
+  selPessoa(nome);
+}
+
+function selPessoa(p){
   const todas=pessoasComParcelas()[p]||[];
+  const totalGeral=todas.reduce((a,x)=>a+x.valor,0);
+  const badge=document.getElementById('badge-total-pessoa');
+  if(badge) badge.textContent = totalGeral>0 ? 'R$ '+fmt(totalGeral) : '';
+
   if(todas.length===0){
     document.getElementById('dev-content').innerHTML=`<div class="sec"><div style="padding:32px;text-align:center;color:var(--text3);font-size:13px;">${p} não tem parcelas em aberto neste mês.</div></div>`;
     return;
@@ -1459,55 +1526,87 @@ function selPessoa(p,btn){
   }).join('');
 }
 
+function abrirModalAddPessoa(){
+  document.getElementById('nova-pessoa-nome').value='';
+  openModal('m-add-pessoa');
+  setTimeout(()=>document.getElementById('nova-pessoa-nome').focus(),100);
+}
+
+function salvarNovaPessoa(){
+  const nome = document.getElementById('nova-pessoa-nome').value.trim();
+  if(!nome){ alert('Digite um nome.'); return; }
+  if(PESSOAS_CADASTRO.includes(nome)){ alert('Essa pessoa já existe.'); return; }
+  PESSOAS_CADASTRO.push(nome);
+  closeModal('m-add-pessoa');
+  rebuildPessoaSelects();
+  // Seleciona a nova pessoa no dropdown
+  const sel = document.getElementById('sel-pessoa-balanco');
+  if(sel){ sel.value=nome; selPessoaDropdown(); }
+  toast('✓ '+nome+' adicionado(a) como responsável');
+}
+
 function gerarPdfBalanco(){
+  const sel = document.getElementById('sel-pessoa-balanco');
+  const nome = sel ? sel.value : PESSOAS_CADASTRO[0];
   const pessoas = pessoasComParcelas();
   const mesLabel = MESES[mesSel]+' '+mesAno;
   const dataGeracao = new Date().toLocaleDateString('pt-BR');
 
+  const parcelas = pessoas[nome] || [];
+  if(parcelas.length === 0){
+    alert(`${nome} não tem parcelas em aberto em ${mesLabel}.`);
+    return;
+  }
+
+  const totalGeral = parcelas.reduce((a,p)=>a+p.valor, 0);
+  const porCartao = {};
+  parcelas.forEach(it=>{ const k=it.forma; if(!porCartao[k]) porCartao[k]=[]; porCartao[k].push(it); });
+
   let html = `
-    <h1>Balanço por Pessoa — ${mesLabel}</h1>
-    <div class="print-meta">Gerado em ${dataGeracao} · Família Carvalho Pinto</div>
+    <h1>Balanço de ${nome} — ${mesLabel}</h1>
+    <div class="print-meta">Gerado em ${dataGeracao} · Família Carvalho Pinto &nbsp;|&nbsp; Total: R$ ${fmt(totalGeral)}</div>
   `;
 
-  PESSOAS_CADASTRO.forEach(nome => {
-    const parcelas = pessoas[nome] || [];
-    if(parcelas.length === 0) return; // pula quem não tem parcelas no mês
-
-    const totalGeral = parcelas.reduce((a,p)=>a+p.valor, 0);
-    const porCartao = {};
-    parcelas.forEach(it=>{ const k=it.forma; if(!porCartao[k]) porCartao[k]=[]; porCartao[k].push(it); });
-
-    html += `<h2>${nome} — Total: R$ ${fmt(totalGeral)}</h2>`;
-
-    Object.entries(porCartao).forEach(([cartaoNome, items]) => {
-      const fc = CARTOES.find(c=>c.nome===cartaoNome);
-      const sub = items.reduce((a,x)=>a+x.valor, 0);
-      html += `
-        <table>
-          <thead>
-            <tr class="print-sec-header">
-              <th colspan="3">${cartaoNome}${fc?` — vence dia ${fc.venc}`:''} &nbsp;|&nbsp; Subtotal: R$ ${fmt(sub)}</th>
-            </tr>
-            <tr><th>Descrição</th><th>Parcela</th><th style="text-align:right">Valor</th></tr>
-          </thead>
-          <tbody>
-            ${items.map(it=>`
-              <tr>
-                <td>${it.desc}</td>
-                <td>${it.numero}/${it.total}</td>
-                <td style="text-align:right">R$ ${fmt(it.valor)}</td>
-              </tr>`).join('')}
-          </tbody>
-          <tfoot>
-            <tr class="print-total">
-              <td colspan="2">Total ${cartaoNome}</td>
-              <td style="text-align:right">R$ ${fmt(sub)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      `;
-    });
+  Object.entries(porCartao).forEach(([cartaoNome, items]) => {
+    const fc = CARTOES.find(c=>c.nome===cartaoNome);
+    const sub = items.reduce((a,x)=>a+x.valor, 0);
+    html += `
+      <table>
+        <thead>
+          <tr class="print-sec-header">
+            <th colspan="3">${cartaoNome}${fc?` — vence dia ${fc.venc}`:''} &nbsp;|&nbsp; Subtotal: R$ ${fmt(sub)}</th>
+          </tr>
+          <tr><th>Descrição</th><th>Parcela</th><th style="text-align:right">Valor</th></tr>
+        </thead>
+        <tbody>
+          ${items.map(it=>`
+            <tr>
+              <td>${it.desc}</td>
+              <td>${it.numero}/${it.total}</td>
+              <td style="text-align:right">R$ ${fmt(it.valor)}</td>
+            </tr>`).join('')}
+        </tbody>
+        <tfoot>
+          <tr class="print-total">
+            <td colspan="2">Total ${cartaoNome}</td>
+            <td style="text-align:right">R$ ${fmt(sub)}</td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
   });
+
+  // Total geral no final
+  html += `
+    <table>
+      <tfoot>
+        <tr class="print-total">
+          <td colspan="2" style="font-size:13px;">TOTAL GERAL — ${nome}</td>
+          <td style="text-align:right;font-size:13px;">R$ ${fmt(totalGeral)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  `;
 
   const printDiv = document.getElementById('print-balanco');
   printDiv.innerHTML = html;
