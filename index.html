@@ -1467,32 +1467,41 @@ function pessoasComParcelas(){
 }
 
 function rebuildPessoaSelects(){
-  // Atualiza o dropdown de balanço por pessoa
-  const sel = document.getElementById('sel-pessoa-balanco');
-  if(sel){
-    const cur = sel.value;
-    sel.innerHTML = PESSOAS_CADASTRO.map(n=>`<option value="${n}">${n}</option>`).join('');
-    if(PESSOAS_CADASTRO.includes(cur)) sel.value=cur;
+  // 1. Dropdown de balanço por pessoa
+  const selBalanco = document.getElementById('sel-pessoa-balanco');
+  if(selBalanco){
+    const cur = selBalanco.value;
+    selBalanco.innerHTML = PESSOAS_CADASTRO.map(n=>`<option value="${n}">${n}</option>`).join('');
+    if(PESSOAS_CADASTRO.includes(cur)) selBalanco.value = cur;
+    else selBalanco.value = PESSOAS_CADASTRO[0];
   }
-  // Atualiza o select de responsável no formulário de lançamento
-  ['f-resp','hist-f-resp','lanc-f-resp','sa-pessoa','ea-resp','empa-resp'].forEach(id=>{
+
+  // 2. Select de responsável no formulário de lançamento (f-resp)
+  const fResp = document.getElementById('f-resp');
+  if(fResp){
+    const cur = fResp.value;
+    fResp.innerHTML = `<option value="">Selecione…</option><option>Casal</option>`
+      + PESSOAS_CADASTRO.map(n=>`<option>${n}</option>`).join('');
+    if(cur) fResp.value = cur;
+  }
+
+  // 3. Select de pessoa em salários (sa-pessoa)
+  const saPessoa = document.getElementById('sa-pessoa');
+  if(saPessoa){
+    const cur = saPessoa.value;
+    saPessoa.innerHTML = `<option value="">Selecione…</option>`
+      + PESSOAS_CADASTRO.map(n=>`<option>${n}</option>`).join('');
+    if(cur) saPessoa.value = cur;
+  }
+
+  // 4. Selects de responsável em extras e empréstimos
+  ['ea-resp','empa-resp'].forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
-    // Mantém a option vazia/padrão e opções fixas + as pessoas cadastradas
-    const fixas = id==='f-resp'||id==='hist-f-resp'||id==='lanc-f-resp' ? ['','Casal'] : id==='sa-pessoa' ? [''] : [''];
-    const extras = PESSOAS_CADASTRO.filter(p=>p!=='Casal');
-    // Recria só as opções de pessoas (após as fixas)
-    const allOpts = [...el.options];
-    const hasFixas = allOpts.some(o=>o.value==='' || o.value==='Casal');
-    if(!hasFixas) return;
-    // Remove opções que não são mais válidas nem fixas
-    PESSOAS_CADASTRO.forEach(nome=>{
-      if(![...el.options].some(o=>o.value===nome)){
-        const opt=document.createElement('option');
-        opt.value=nome;opt.textContent=nome;
-        el.appendChild(opt);
-      }
-    });
+    const cur = el.value;
+    el.innerHTML = `<option value="">Selecione…</option><option>Casal</option>`
+      + PESSOAS_CADASTRO.map(n=>`<option>${n}</option>`).join('');
+    if(cur) el.value = cur;
   });
 }
 
