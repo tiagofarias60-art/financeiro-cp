@@ -1011,6 +1011,7 @@ function changeMonthKey(key){
   recalcCategorias();
   renderAll();
   if(document.getElementById('view-resumocartoes').classList.contains('active'))renderResumoCartoes();
+  if(document.getElementById('view-faturadetalhada').classList.contains('active'))renderFaturaDetalhada();
   buildCharts();
 }
 function ensureMonthOption(y,m){
