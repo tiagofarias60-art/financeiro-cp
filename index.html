@@ -554,7 +554,7 @@ input[type=number]{-moz-appearance:textfield;}
         <button class="btn p sm" onclick="saveExt()">Salvar</button>
         <button class="btn gh sm" onclick="document.getElementById('ext-add').classList.remove('open')">✕</button>
       </div>
-      <div style="padding:10px 18px;border-top:1px solid var(--border);"><button class="btn gh sm" onclick="document.getElementById('ext-add').classList.add('open')">＋ Adicionar renda extra</button></div>
+      <div style="padding:10px 18px;border-top:1px solid var(--border);"><button class="btn gh sm" onclick="abrirExtAdd()">＋ Adicionar renda extra</button></div>
     </div>
     <div id="ent-emp" style="display:none;">
       <table><thead><tr><th>De quem</th><th>Data</th><th>Quem recebe</th><th class="R">Valor</th><th></th></tr></thead>
@@ -1288,19 +1288,30 @@ function selEntTab(tab,btn){
   document.getElementById('ent-ext').style.display=tab==='ext'?'block':'none';
   document.getElementById('ent-emp').style.display=tab==='emp'?'block':'none';
 }
+// entradaDoMes — para EXIBIÇÃO: mostra no mês da data do lançamento (sempre)
 function entradaDoMes(dataStr){
   if(!dataStr) return false;
   const d = new Date(dataStr+'T00:00:00');
   if(isNaN(d)) return false;
+  return d.getMonth()===mesSel && d.getFullYear()===mesAno;
+}
+
+// entradaJanela — para CÔMPUTO no painel: segue a regra de janela dia 10/24
+// Dia 25-31 mês anterior → soma no Fluxo Dia 10 do mês atual
+// Dia 1-10 mês atual → soma no Fluxo Dia 10
+// Dia 11-24 mês atual → soma no Fluxo Dia 24
+// Dia 25-31 mês atual → não aparece no mês atual (vai pro próximo)
+function entradaJanela(dataStr){
+  if(!dataStr) return null;
+  const d = new Date(dataStr+'T00:00:00');
+  if(isNaN(d)) return null;
   const dia = d.getDate(), mes = d.getMonth(), ano = d.getFullYear();
-  // Dia 25-31 do mês anterior → aparece no mês atual (janela Dia 10)
   const mesPrev = mesSel > 0 ? mesSel-1 : 11;
   const anoPrev = mesSel > 0 ? mesAno : mesAno-1;
-  if(mes===mesPrev && ano===anoPrev && dia>=25) return true;
-  // Dia 1-24 do mês atual → aparece normalmente
-  if(mes===mesSel && ano===mesAno && dia>=1 && dia<=24) return true;
-  // Dia 25-31 do mês atual → vai pro mês seguinte, não aparece aqui
-  return false;
+  if(mes===mesPrev && ano===anoPrev && dia>=25) return 'd10';
+  if(mes===mesSel && ano===mesAno && dia>=1 && dia<=10) return 'd10';
+  if(mes===mesSel && ano===mesAno && dia>=11 && dia<=24) return 'd24';
+  return null; // dia 25-31 do mês atual → não computa
 }
 function renderSalarios(){
   const doMes = SALARIOS.map((s,i)=>({...s,_idx:i})).filter(s=>entradaDoMes(s.data));
@@ -1348,12 +1359,24 @@ async function deleteExtra(i){
   EXTRAS.splice(i,1);renderExtras();recalc();
   if(item._row) await apiPost('deleteExtra',{_row:item._row});
 }
+function abrirExtAdd(){
+  document.getElementById('ext-add').classList.add('open');
+  const dataEl = document.getElementById('ea-data');
+  if(!dataEl.value) dataEl.value = new Date().toISOString().slice(0,10);
+}
 async function saveExt(){
-  const d=document.getElementById('ea-desc').value.trim(),v=parseMoneyBR(document.getElementById('ea-val').value);
-  if(!d||!v)return;
-  const data=document.getElementById('ea-data').value,resp=document.getElementById('ea-resp').value;
+  const d=document.getElementById('ea-desc').value.trim();
+  const v=parseMoneyBR(document.getElementById('ea-val').value);
+  const data=document.getElementById('ea-data').value;
+  const resp=document.getElementById('ea-resp').value;
+  if(!d){ alert('Preencha a descrição.'); return; }
+  if(!v){ alert('Preencha o valor.'); return; }
+  if(!data){ alert('Preencha a data.'); return; }
   EXTRAS.push({desc:d,data,resp,valor:v});
-  document.getElementById('ext-add').classList.remove('open');renderExtras();recalc();
+  document.getElementById('ext-add').classList.remove('open');
+  document.getElementById('ea-desc').value='';
+  document.getElementById('ea-val').value='';
+  renderExtras();recalc();
   await apiPost('addExtra',{descricao:d,data,responsavel:resp,valor:v});
 }
 function renderEmpr(){
@@ -1404,31 +1427,9 @@ function renderPainel(){
   // Janela Dia 24: recebido no mês atual dia 11-24
   // Fora: recebido dia 25-31 do mês atual → vai pro mês seguinte
   const mesAtual = mesSel, anoAtual = mesAno;
-  const mesPrev = mesSel > 0 ? mesSel - 1 : 11;
-  const anoPrev = mesSel > 0 ? mesAno : mesAno - 1;
 
-  function diaEntrada(dataStr){
-    if(!dataStr) return null;
-    const d = new Date(dataStr+'T00:00:00');
-    if(isNaN(d)) return null;
-    return {dia: d.getDate(), mes: d.getMonth(), ano: d.getFullYear()};
-  }
-
-  function janelaEntrada(dataStr){
-    const info = diaEntrada(dataStr);
-    if(!info) return null;
-    // Mês anterior dia 25-31 → janela D10 do mês atual
-    if(info.mes === mesPrev && info.ano === anoPrev && info.dia >= 25) return 'd10';
-    // Mês atual dia 1-10 → janela D10
-    if(info.mes === mesAtual && info.ano === anoAtual && info.dia >= 1 && info.dia <= 10) return 'd10';
-    // Mês atual dia 11-24 → janela D24
-    if(info.mes === mesAtual && info.ano === anoAtual && info.dia >= 11 && info.dia <= 24) return 'd24';
-    // Resto → fora do mês atual
-    return null;
-  }
-
-  const entD10 = [...SALARIOS, ...EXTRAS, ...EMPR].filter(e=>janelaEntrada(e.data||e.dataStr)===  'd10').reduce((a,e)=>a+(e.liq||e.valor||0), 0);
-  const entD24 = [...SALARIOS, ...EXTRAS, ...EMPR].filter(e=>janelaEntrada(e.data||e.dataStr)==='d24').reduce((a,e)=>a+(e.liq||e.valor||0), 0);
+  const entD10 = [...SALARIOS, ...EXTRAS, ...EMPR].filter(e=>entradaJanela(e.data)==='d10').reduce((a,e)=>a+(e.liq||e.valor||0), 0);
+  const entD24 = [...SALARIOS, ...EXTRAS, ...EMPR].filter(e=>entradaJanela(e.data)==='d24').reduce((a,e)=>a+(e.liq||e.valor||0), 0);
   const totalEntradas = entD10 + entD24;
 
   // ── Débitos variáveis do mês (compras em débito) ──
