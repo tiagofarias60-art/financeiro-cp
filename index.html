@@ -1758,14 +1758,19 @@ async function savePoup(){
   await apiPost('addPoupanca',{data,onde:o,tipo,movimento:poupTipo,valor:v});
 }
 
+let _carregandoSaldo = false; // flag para evitar loop: carregarSaldoAnt → oninput → onSaldoAntChange
 function carregarSaldoAnt(){
   const reg = SALDOS_ANT.find(s=>s.ano===mesAno && s.mes===mesSel);
   const saldoInput = document.getElementById('saldo-ant');
-  if(saldoInput) saldoInput.value = reg ? fmt(reg.valor) : '0,00';
+  if(!saldoInput) return;
+  _carregandoSaldo = true;
+  saldoInput.value = reg ? fmt(reg.valor) : '0,00';
+  _carregandoSaldo = false;
 }
 
 let saldoDebounce;
 function onSaldoAntChange(el){
+  if(_carregandoSaldo) return; // ignora disparos causados por carregarSaldoAnt
   maskMoney(el);
   const v = parseMoneyBR(el.value);
   // Atualiza em memória imediatamente
