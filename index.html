@@ -731,7 +731,8 @@ let SALARIOS=[];
 let EXTRAS=[];
 let EMPR=[];
 let POUP=[];
-let POUP_BASE=0; // saldo histórico acumulado, vindo da planilha (somatório de tudo até hoje)
+let POUP_BASE=0;
+let SALDOS_ANT=[]; // [{ano, mes, valor_saldo_anterior, _row}] — todos os meses // saldo histórico acumulado, vindo da planilha (somatório de tudo até hoje)
 let CATS=[]; // gastos por categoria do mês — recalculado localmente a partir de COMPRAS+FIXOS, ver recalcCategorias()
 
 // Mapeia uma linha da aba "Compras" no Sheets para o formato interno do app
@@ -828,9 +829,13 @@ async function loadFromSheets(){
       FATURAS_REAIS[`${f.cartao_id}|${f.ano}|${f.mes}`] = String(f.valor_real);
     });
 
-    const saldoAnt = (data.saldoAnterior||[]).find(s=>Number(s.ano)===mesAno && Number(s.mes)===mesSel);
-    const saldoInput = document.getElementById('saldo-ant');
-    if(saldoInput) saldoInput.value = saldoAnt ? fmt(parseMoneyBR(String(saldoAnt.valor_saldo_anterior))) : '0,00';
+    SALDOS_ANT = (data.saldoAnterior||[]).map(s=>({
+      _row: s._row,
+      ano: Number(s.ano),
+      mes: Number(s.mes),
+      valor: parseMoneyBR(String(s.valor_saldo_anterior))
+    }));
+    carregarSaldoAnt();
 
     recalcCategorias();
     rebuildFormaSelects();
@@ -998,6 +1003,14 @@ function renderAll(){
   renderPainel();
 }
 
+// Atualiza tudo após qualquer mutação de dados
+function atualizarTudo(){
+  recalcCategorias();
+  renderAll();
+  if(document.getElementById('view-faturadetalhada').classList.contains('active')) renderFaturaDetalhada();
+  buildCharts();
+}
+
 
 function goTo(id,btn){document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));document.querySelectorAll(".nav-item").forEach(n=>n.classList.remove("active"));document.getElementById("view-"+id).classList.add("active");btn.classList.add("active");if(id==="resumocartoes")renderResumoCartoes();if(id==="faturadetalhada"){initFdCartaoSelect();renderFaturaDetalhada();}if(id==="devedores")renderPessoasTabs();if(id==="novo"||id==="fixos"){rebuildFormaSelects();renderHist();renderUltimosLanc();}}
 
@@ -1008,6 +1021,7 @@ function changeMonthKey(key){
   document.querySelectorAll('.mes-label').forEach(el=>el.textContent=lbl);
   ensureMonthOption(y,m);
   document.getElementById('month-sel').value=key;
+  carregarSaldoAnt(); // carrega o saldo correto para este mês
   recalcCategorias();
   renderAll();
   if(document.getElementById('view-resumocartoes').classList.contains('active'))renderResumoCartoes();
@@ -1227,7 +1241,7 @@ async function excluirCompra(id){
   const ids = new Set(relacionadas.map(c=>c.id));
   COMPRAS = COMPRAS.filter(c=>!ids.has(c.id));
   recalcCategorias();
-  renderHist();renderResumoCartoes();renderUltimosLanc();renderPessoasTabs();buildCharts();
+  atualizarTudo();
 
   // Exclui todas na planilha (em sequência para não sobrecarregar a API)
   for(const c of relacionadas){
@@ -1245,10 +1259,10 @@ async function deleteFixo(i){
   const item=FIXOS[i];
   if(!item._row){
     // Item ainda não salvo na planilha ou _row não encontrado
-    FIXOS.splice(i,1);renderFixos();renderPainel();
+    FIXOS.splice(i,1);atualizarTudo();
     return;
   }
-  FIXOS.splice(i,1);renderFixos();renderPainel();
+  FIXOS.splice(i,1);atualizarTudo();
   const res = await apiPost('deleteFixo',{_row:item._row});
   if(!res.ok) console.error('Erro ao excluir fixo da planilha, _row=', item._row, res);
 }
@@ -1275,7 +1289,7 @@ async function saveFixo(){
   const novoFixo={desc,cat,valor:val,venc,resp,forma};
   FIXOS.push(novoFixo);
   document.getElementById('fixos-add').classList.remove('open');['fa-desc','fa-val','fa-venc'].forEach(id=>document.getElementById(id).value='');
-  renderFixos();renderPainel();
+  atualizarTudo();
   const res = await apiPost('addFixo',{descricao:desc,categoria:cat,valor:val,dia_vencimento:venc,responsavel:resp,forma_pagamento:forma});
   // Após salvar, recarrega os fixos para obter o _row correto da planilha
   if(res.ok) loadFromSheets();
@@ -1323,7 +1337,7 @@ function renderSalarios(){
 }
 async function deleteSalario(i){
   const item=SALARIOS[i];
-  SALARIOS.splice(i,1);renderSalarios();
+  SALARIOS.splice(i,1);atualizarTudo();
   if(item._row) await apiPost('deleteSalario',{_row:item._row});
 }
 function startSalEdit(el,idx,field){
@@ -1347,7 +1361,7 @@ async function saveSal(){
   if(!b||!l){alert('Informe bruto e líquido.');return;}
   const pessoa=document.getElementById('sa-pessoa').value||'?',data=document.getElementById('sa-data').value;
   SALARIOS.push({pessoa,data,bruto:b,liq:l});
-  document.getElementById('sal-add').classList.remove('open');renderSalarios();
+  document.getElementById('sal-add').classList.remove('open');atualizarTudo();
   await apiPost('addSalario',{pessoa,data,valor_bruto:b,valor_liquido:l});
 }
 function renderExtras(){
@@ -1356,7 +1370,7 @@ function renderExtras(){
 }
 async function deleteExtra(i){
   const item=EXTRAS[i];
-  EXTRAS.splice(i,1);renderExtras();recalc();
+  EXTRAS.splice(i,1);atualizarTudo();
   if(item._row) await apiPost('deleteExtra',{_row:item._row});
 }
 function abrirExtAdd(){
@@ -1376,7 +1390,7 @@ async function saveExt(){
   document.getElementById('ext-add').classList.remove('open');
   document.getElementById('ea-desc').value='';
   document.getElementById('ea-val').value='';
-  renderExtras();recalc();
+  atualizarTudo();
   await apiPost('addExtra',{descricao:d,data,responsavel:resp,valor:v});
 }
 function renderEmpr(){
@@ -1385,7 +1399,7 @@ function renderEmpr(){
 }
 async function deleteEmprestimo(i){
   const item=EMPR[i];
-  EMPR.splice(i,1);renderEmpr();recalc();
+  EMPR.splice(i,1);atualizarTudo();
   if(item._row) await apiPost('deleteEmprestimo',{_row:item._row});
 }
 async function saveEmp(){
@@ -1393,7 +1407,7 @@ async function saveEmp(){
   if(!d||!v)return;
   const data=document.getElementById('empa-data').value,resp=document.getElementById('empa-resp').value;
   EMPR.push({de:d,data,resp,valor:v});
-  document.getElementById('emp-add').classList.remove('open');renderEmpr();recalc();
+  document.getElementById('emp-add').classList.remove('open');atualizarTudo();
   await apiPost('addEmprestimo',{de_quem:d,data,quem_recebe:resp,valor:v});
 }
 function recalc(){
@@ -1520,6 +1534,7 @@ function renderPainel(){
   set('p-deb-d10-real',   '− R$ '+fmt(debD10));
   set('p-cart-d10-prev',  '− R$ '+fmt(cart10Prev));
   set('p-cart-d10-real',  (cart10FaltandoDigitar>0?'⚠️ ':'')+'− R$ '+fmt(cart10RealTotal));
+  // Total venc. dia 10 = débitos + cartões
   set('p-sobra-d10-prev', 'R$ '+fmt(sobraD10Prev)); setColor('p-sobra-d10-prev', sobraD10Prev>=0);
   set('p-sobra-d10-real', 'R$ '+fmt(sobraD10Real)); setColor('p-sobra-d10-real', sobraD10Real>=0);
   set('p-badge-d10-prev', 'Previsto R$ '+fmt(sobraD10Prev));
@@ -1534,6 +1549,7 @@ function renderPainel(){
   set('p-deb-d24-real',   '− R$ '+fmt(debD24));
   set('p-cart-d24-prev',  '− R$ '+fmt(cart24Prev));
   set('p-cart-d24-real',  (cart24FaltandoDigitar>0?'⚠️ ':'')+'− R$ '+fmt(cart24RealTotal));
+  // Total venc. dia 24 = débitos + cartões
   set('p-sf-d24-prev',    'R$ '+fmt(sfPrev)); setColor('p-sf-d24-prev', sfPrev>=0);
   set('p-sf-d24-real',    'R$ '+fmt(sfReal)); setColor('p-sf-d24-real', sfReal>=0);
   set('p-badge-d24-prev', 'Previsto R$ '+fmt(sfPrev));
@@ -1728,7 +1744,7 @@ function renderPoup(){
 }
 async function deletePoup(i){
   const item=POUP[i];
-  POUP.splice(i,1);renderPoup();
+  POUP.splice(i,1);atualizarTudo();
   if(item._row) await apiPost('deletePoupanca',{_row:item._row});
 }
 function openPoupModal(tipo){poupTipo=tipo;document.getElementById('poup-modal-title').textContent=tipo==='deposito'?'Novo depósito':'Nova retirada';document.getElementById('pm-btn').textContent=tipo==='deposito'?'Salvar depósito':'Salvar retirada';openModal('m-poup');}
@@ -1738,17 +1754,28 @@ async function savePoup(){
   const data=document.getElementById('pm-data').value,tipo=document.getElementById('pm-tipo').value;
   POUP.push({data,onde:o,tipo,mov:poupTipo,valor:v});
   closeModal('m-poup');
-  document.getElementById('pm-val').value='';document.getElementById('pm-onde').value='';renderPoup();
+  document.getElementById('pm-val').value='';document.getElementById('pm-onde').value='';atualizarTudo();
   await apiPost('addPoupanca',{data,onde:o,tipo,movimento:poupTipo,valor:v});
 }
 
-// Saldo anterior: salva na planilha com debounce quando o usuário muda o valor
+function carregarSaldoAnt(){
+  const reg = SALDOS_ANT.find(s=>s.ano===mesAno && s.mes===mesSel);
+  const saldoInput = document.getElementById('saldo-ant');
+  if(saldoInput) saldoInput.value = reg ? fmt(reg.valor) : '0,00';
+}
+
 let saldoDebounce;
 function onSaldoAntChange(el){
   maskMoney(el);
+  const v = parseMoneyBR(el.value);
+  // Atualiza em memória imediatamente
+  const idx = SALDOS_ANT.findIndex(s=>s.ano===mesAno && s.mes===mesSel);
+  if(idx>=0){ SALDOS_ANT[idx].valor=v; }
+  else { SALDOS_ANT.push({ano:mesAno, mes:mesSel, valor:v, _row:null}); }
+  renderPainel();
+  // Salva na planilha com debounce
   clearTimeout(saldoDebounce);
   saldoDebounce=setTimeout(()=>{
-    const v=parseMoneyBR(el.value);
     apiPost('upsertSaldoAnterior',{ano:mesAno,mes:mesSel,valor_saldo_anterior:v});
   },800);
 }
@@ -1772,7 +1799,7 @@ async function addCartao(){
   const novoCartao={id:nome.toLowerCase().replace(/\s+/g,''),nome,fecham,venc,cor:corEl?corEl.dataset.cor:CORES_CARTAO[0]};
   CARTOES.push(novoCartao);
   document.getElementById('nc-nome').value='';document.getElementById('nc-fecham').value='';document.getElementById('nc-venc').value='';
-  rebuildFormaSelects();renderCartoesConfig();renderResumoCartoes();buildCharts();
+  rebuildFormaSelects();atualizarTudo();
   toggleCadastroCartao();
   toast('✓ Cartão "'+nome+'" cadastrado e disponível em todas as telas');
   await apiPost('addCartao',{id:novoCartao.id,nome:novoCartao.nome,dia_fechamento:fecham,dia_vencimento:venc,cor:novoCartao.cor});
@@ -1863,7 +1890,7 @@ async function salvarLanc(){
   btn.textContent='✓ Salvo!';btn.style.background='var(--green)';
   setTimeout(()=>{btn.textContent='Salvar lançamento';btn.style.background='';},1800);
   recalcCategorias();
-  renderUltimosLanc();renderHist();renderResumoCartoes();renderPessoasTabs();buildCharts();
+  atualizarTudo();
   toast(`✓ ${totalParc} parcela${totalParc>1?'s':''} lançada${totalParc>1?'s':''} · R$ ${fmt(valorParcela)} cada`);
 }
 
