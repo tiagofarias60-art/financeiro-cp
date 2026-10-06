@@ -732,7 +732,8 @@ let EXTRAS=[];
 let EMPR=[];
 let POUP=[];
 let POUP_BASE=0;
-let SALDOS_ANT=[]; // [{ano, mes, valor_saldo_anterior, _row}] — todos os meses // saldo histórico acumulado, vindo da planilha (somatório de tudo até hoje)
+let SALDO_ANT_VALOR = 0; // saldo do mês selecionado atual
+let SALDOS_MAP = {}; // mapa simples: "ano-mes" → valor (ex: "2026-8" → 5156.97)
 let CATS=[]; // gastos por categoria do mês — recalculado localmente a partir de COMPRAS+FIXOS, ver recalcCategorias()
 
 // Mapeia uma linha da aba "Compras" no Sheets para o formato interno do app
@@ -829,13 +830,14 @@ async function loadFromSheets(){
       FATURAS_REAIS[`${f.cartao_id}|${f.ano}|${f.mes}`] = String(f.valor_real);
     });
 
-    SALDOS_ANT = (data.saldoAnterior||[]).map(s=>({
-      _row: s._row,
-      ano: Number(s.ano),
-      mes: Number(s.mes),
-      valor: parseMoneyBR(String(s.valor_saldo_anterior))
-    }));
-    carregarSaldoAnt();
+    // Saldo anterior: carrega todos os meses no mapa e pega o do mês atual
+    SALDOS_MAP = {};
+    (data.saldoAnterior||[]).forEach(s=>{
+      SALDOS_MAP[`${Number(s.ano)}-${Number(s.mes)}`] = parseMoneyBR(String(s.valor_saldo_anterior));
+    });
+    SALDO_ANT_VALOR = SALDOS_MAP[`${mesAno}-${mesSel}`] || 0;
+    const _saldoInput = document.getElementById('saldo-ant');
+    if(_saldoInput) _saldoInput.value = fmt(SALDO_ANT_VALOR);
 
     recalcCategorias();
     rebuildFormaSelects();
@@ -1021,10 +1023,12 @@ function changeMonthKey(key){
   document.querySelectorAll('.mes-label').forEach(el=>el.textContent=lbl);
   ensureMonthOption(y,m);
   document.getElementById('month-sel').value=key;
-  carregarSaldoAnt(); // carrega o saldo correto para este mês
+  // Carrega saldo anterior do mapa — simples como trocar um campo de texto
+  SALDO_ANT_VALOR = SALDOS_MAP[`${y}-${m}`] || 0;
+  const _si = document.getElementById('saldo-ant');
+  if(_si) _si.value = fmt(SALDO_ANT_VALOR);
   recalcCategorias();
   renderAll();
-  renderPainel(); // garante que o painel usa o saldo já carregado
   if(document.getElementById('view-resumocartoes').classList.contains('active'))renderResumoCartoes();
   if(document.getElementById('view-faturadetalhada').classList.contains('active'))renderFaturaDetalhada();
   buildCharts();
@@ -1435,9 +1439,7 @@ function renderPainel(){
   const isCartaoCredito = forma => !isDebito(forma) && forma !== '' && CARTOES.some(c=>c.nome===forma);
 
   // ── Saldo anterior ──
-  // Lê saldo anterior do array em memória (fonte da verdade), não do campo HTML
-  const _regSaldo = SALDOS_ANT.find(s=>s.ano===mesAno && s.mes===mesSel);
-  const saldoAnt = _regSaldo ? _regSaldo.valor : parseMoneyBR(document.getElementById('saldo-ant')?.value || '0');
+  const saldoAnt = SALDO_ANT_VALOR;
 
   // ── Entradas por janela ──
   // Janela Dia 10: recebido no mês atual dia 1-10, OU no mês anterior dia 25-31
@@ -1761,31 +1763,16 @@ async function savePoup(){
   await apiPost('addPoupanca',{data,onde:o,tipo,movimento:poupTipo,valor:v});
 }
 
-let _carregandoSaldo = false; // flag para evitar loop: carregarSaldoAnt → oninput → onSaldoAntChange
-function carregarSaldoAnt(){
-  const reg = SALDOS_ANT.find(s=>s.ano===mesAno && s.mes===mesSel);
-  const saldoInput = document.getElementById('saldo-ant');
-  if(!saldoInput) return;
-  _carregandoSaldo = true;
-  saldoInput.value = reg ? fmt(reg.valor) : '0,00';
-  _carregandoSaldo = false;
-}
-
 let saldoDebounce;
 function onSaldoAntChange(el){
-  if(_carregandoSaldo) return; // ignora disparos causados por carregarSaldoAnt
   maskMoney(el);
-  const v = parseMoneyBR(el.value);
-  // Atualiza em memória imediatamente
-  const idx = SALDOS_ANT.findIndex(s=>s.ano===mesAno && s.mes===mesSel);
-  if(idx>=0){ SALDOS_ANT[idx].valor=v; }
-  else { SALDOS_ANT.push({ano:mesAno, mes:mesSel, valor:v, _row:null}); }
+  SALDO_ANT_VALOR = parseMoneyBR(el.value);
+  SALDOS_MAP[`${mesAno}-${mesSel}`] = SALDO_ANT_VALOR; // persiste no mapa
   renderPainel();
-  // Salva na planilha com debounce
   clearTimeout(saldoDebounce);
-  saldoDebounce=setTimeout(()=>{
-    apiPost('upsertSaldoAnterior',{ano:mesAno,mes:mesSel,valor_saldo_anterior:v});
-  },800);
+  saldoDebounce = setTimeout(()=>{
+    apiPost('upsertSaldoAnterior',{ano:mesAno, mes:mesSel, valor_saldo_anterior:SALDO_ANT_VALOR});
+  }, 800);
 }
 
 // ── MEUS CARTÕES (cadastro) ──
