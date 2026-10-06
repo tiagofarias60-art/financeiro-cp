@@ -1024,6 +1024,7 @@ function changeMonthKey(key){
   carregarSaldoAnt(); // carrega o saldo correto para este mês
   recalcCategorias();
   renderAll();
+  renderPainel(); // garante que o painel usa o saldo já carregado
   if(document.getElementById('view-resumocartoes').classList.contains('active'))renderResumoCartoes();
   if(document.getElementById('view-faturadetalhada').classList.contains('active'))renderFaturaDetalhada();
   buildCharts();
@@ -1434,7 +1435,9 @@ function renderPainel(){
   const isCartaoCredito = forma => !isDebito(forma) && forma !== '' && CARTOES.some(c=>c.nome===forma);
 
   // ── Saldo anterior ──
-  const saldoAnt = parseMoneyBR(document.getElementById('saldo-ant')?.value || '0');
+  // Lê saldo anterior do array em memória (fonte da verdade), não do campo HTML
+  const _regSaldo = SALDOS_ANT.find(s=>s.ano===mesAno && s.mes===mesSel);
+  const saldoAnt = _regSaldo ? _regSaldo.valor : parseMoneyBR(document.getElementById('saldo-ant')?.value || '0');
 
   // ── Entradas por janela ──
   // Janela Dia 10: recebido no mês atual dia 1-10, OU no mês anterior dia 25-31
