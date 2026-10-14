@@ -131,6 +131,32 @@ input[type=number]{-moz-appearance:textfield;}
 <body>
 
 <!-- Barra de aviso: aparece quando a API falha -->
+<!-- TELA DE LOGIN -->
+<div id="login-screen" style="position:fixed;inset:0;background:var(--bg);z-index:10000;display:flex;align-items:center;justify-content:center;">
+  <div style="width:360px;background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:36px 32px;">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:22px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px;">Carvalho<span style="color:var(--accent)">.</span>Pinto</div>
+      <div style="font-size:12.5px;color:var(--text3);">Controle Financeiro da Família</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);">Usuário</label>
+        <select id="login-usuario" class="fs" style="font-size:14px;padding:10px 12px;">
+          <option value="">Selecione…</option>
+          <option value="Tiago">Tiago</option>
+          <option value="Jade">Jade</option>
+        </select>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <label style="font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--text3);">Senha</label>
+        <input type="password" id="login-senha" class="fi" placeholder="••••••••" style="font-size:14px;padding:10px 12px;" onkeydown="if(event.key==='Enter')tentarLogin()">
+      </div>
+      <div id="login-erro" style="font-size:12.5px;color:var(--red);min-height:18px;text-align:center;"></div>
+      <button onclick="tentarLogin()" style="background:var(--accent);border:none;color:#fff;padding:12px;border-radius:8px;font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;">Entrar</button>
+    </div>
+  </div>
+</div>
+
 <div id="sync-warning" style="display:none;background:rgba(255,94,122,.15);border-bottom:1px solid rgba(255,94,122,.3);padding:8px 24px;align-items:center;gap:10px;font-size:12.5px;color:#ff5e7a;">
   <span>⚠ Não foi possível sincronizar com o Google Sheets. Verifique sua conexão e recarregue a página.</span>
   <button onclick="loadFromSheets()" style="background:rgba(255,94,122,.2);border:1px solid rgba(255,94,122,.4);color:#ff5e7a;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px;">Tentar novamente</button>
@@ -186,7 +212,10 @@ input[type=number]{-moz-appearance:textfield;}
     </div>
     <button class="marrow" onclick="nextMonth()">▶</button>
   </div>
-  <button class="btn-nm" onclick="openModal('m-novo-mes')">＋ Novo mês</button>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="btn-nm" onclick="openModal('m-novo-mes')">＋ Novo mês</button>
+    <button onclick="sair()" style="padding:7px 14px;background:var(--bg4);border:1px solid var(--border2);border-radius:7px;color:var(--text2);font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;">Sair</button>
+  </div>
 </div>
 
 <div class="app-body">
@@ -273,6 +302,10 @@ input[type=number]{-moz-appearance:textfield;}
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d10-prev">+ R$ 0,00</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d10-real">+ R$ 0,00</span>
 
+        <span style="padding:5px 0;color:var(--green);font-weight:600;">↳ Total entradas</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--green);" id="p-tent-d10-prev">+ R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--green);" id="p-tent-d10-real">+ R$ 0,00</span>
+
         <span style="padding:5px 0;color:var(--text2);">Débitos até dia 10</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d10-prev">− R$ 0,00</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d10-real">− R$ 0,00</span>
@@ -280,6 +313,10 @@ input[type=number]{-moz-appearance:textfield;}
         <span style="padding:5px 0;color:var(--text2);">Cartões venc. dia 10</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d10-prev">− R$ 0,00</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d10-real">− R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--red);font-weight:600;">↳ Total saídas</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--red);" id="p-tsai-d10-prev">− R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--red);" id="p-tsai-d10-real">− R$ 0,00</span>
 
         <span style="padding:7px 0;color:var(--text);font-weight:600;border-top:1px solid var(--border);margin-top:4px;">Sobra → dia 24</span>
         <span class="mono" style="text-align:right;padding:7px 0;font-weight:700;border-top:1px solid var(--border);margin-top:4px;color:var(--green);" id="p-sobra-d10-prev">R$ 0,00</span>
@@ -310,6 +347,10 @@ input[type=number]{-moz-appearance:textfield;}
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d24-prev">+ R$ 0,00</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--green);" id="p-ent-d24-real">+ R$ 0,00</span>
 
+        <span style="padding:5px 0;color:var(--green);font-weight:600;">↳ Total entradas</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--green);" id="p-tent-d24-prev">+ R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--green);" id="p-tent-d24-real">+ R$ 0,00</span>
+
         <span style="padding:5px 0;color:var(--text2);">Débitos até dia 24</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d24-prev">− R$ 0,00</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-deb-d24-real">− R$ 0,00</span>
@@ -317,6 +358,10 @@ input[type=number]{-moz-appearance:textfield;}
         <span style="padding:5px 0;color:var(--text2);">Cartões venc. dia 24</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d24-prev">− R$ 0,00</span>
         <span class="mono" style="text-align:right;padding:5px 0;color:var(--red);" id="p-cart-d24-real">− R$ 0,00</span>
+
+        <span style="padding:5px 0;color:var(--red);font-weight:600;">↳ Total saídas</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--red);" id="p-tsai-d24-prev">− R$ 0,00</span>
+        <span class="mono" style="text-align:right;padding:5px 0;font-weight:600;color:var(--red);" id="p-tsai-d24-real">− R$ 0,00</span>
 
         <span style="padding:7px 0;color:var(--text);font-weight:600;border-top:1px solid var(--border);margin-top:4px;">Saldo final</span>
         <span class="mono" style="text-align:right;padding:7px 0;font-weight:700;border-top:1px solid var(--border);margin-top:4px;" id="p-sf-d24-prev">R$ 0,00</span>
@@ -970,6 +1015,42 @@ function parcelasDoMes(mes, ano){
   return out;
 }
 
+// ── SISTEMA DE LOGIN ──
+const USUARIOS_LOGIN = {
+  'Tiago': '82b67724b6ef61b4b1f2c875682570403a373e015ca8aab3cc72107f45a30847',
+  'Jade':  '82b67724b6ef61b4b1f2c875682570403a373e015ca8aab3cc72107f45a30847',
+};
+async function hashSenha(senha){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(senha));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function tentarLogin(){
+  const usuario = document.getElementById('login-usuario').value.trim();
+  const senha   = document.getElementById('login-senha').value;
+  const erroEl  = document.getElementById('login-erro');
+  if(!usuario || !senha){ erroEl.textContent='Preencha todos os campos.'; return; }
+  const hashDigitado  = await hashSenha(senha);
+  const hashEsperado  = USUARIOS_LOGIN[usuario];
+  if(!hashEsperado || hashDigitado !== hashEsperado){
+    erroEl.textContent='Usuário ou senha incorretos.';
+    document.getElementById('login-senha').value='';
+    document.getElementById('login-senha').focus();
+    return;
+  }
+  document.getElementById('login-screen').style.display='none';
+  loadFromSheets();
+}
+
+function sair(){
+  // Limpa dados em memória
+  COMPRAS=[];FIXOS=[];SALARIOS=[];EXTRAS=[];EMPR=[];POUP=[];CARTOES=[];SALDOS_MAP={};SALDO_ANT_VALOR=0;
+  document.getElementById('login-senha').value='';
+  document.getElementById('login-usuario').value='';
+  document.getElementById('login-erro').textContent='';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('loading-screen').style.display='none';
+}
+
 document.addEventListener('DOMContentLoaded',()=>{
   const today = new Date();
   const todayStr = today.toISOString().slice(0,10);
@@ -987,7 +1068,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('month-sel').value=key;
   document.querySelectorAll('.mes-label').forEach(el=>el.textContent=label);
 
-  loadFromSheets();
+  // Mostra tela de login — dados só carregam após autenticação
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('loading-screen').style.display='none';
+  setTimeout(()=>document.getElementById('login-usuario').focus(), 100);
 });
 
 function renderAll(){
@@ -1535,10 +1619,14 @@ function renderPainel(){
   set('p-saldo-ant-real', '+ R$ '+fmt(saldoAnt));
   set('p-ent-d10-prev',   '+ R$ '+fmt(entD10));
   set('p-ent-d10-real',   '+ R$ '+fmt(entD10));
+  set('p-tent-d10-prev',  '+ R$ '+fmt(saldoAnt + entD10));
+  set('p-tent-d10-real',  '+ R$ '+fmt(saldoAnt + entD10));
   set('p-deb-d10-prev',   '− R$ '+fmt(debD10));
   set('p-deb-d10-real',   '− R$ '+fmt(debD10));
   set('p-cart-d10-prev',  '− R$ '+fmt(cart10Prev));
   set('p-cart-d10-real',  (cart10FaltandoDigitar>0?'⚠️ ':'')+'− R$ '+fmt(cart10RealTotal));
+  set('p-tsai-d10-prev',  '− R$ '+fmt(debD10 + cart10Prev));
+  set('p-tsai-d10-real',  '− R$ '+fmt(debD10 + cart10RealTotal));
   // Total venc. dia 10 = débitos + cartões
   set('p-sobra-d10-prev', 'R$ '+fmt(sobraD10Prev)); setColor('p-sobra-d10-prev', sobraD10Prev>=0);
   set('p-sobra-d10-real', 'R$ '+fmt(sobraD10Real)); setColor('p-sobra-d10-real', sobraD10Real>=0);
@@ -1550,11 +1638,14 @@ function renderPainel(){
   set('p-sobra-d10b-real','+ R$ '+fmt(sobraD10Real));
   set('p-ent-d24-prev',   '+ R$ '+fmt(entD24));
   set('p-ent-d24-real',   '+ R$ '+fmt(entD24));
+  set('p-tent-d24-prev',  '+ R$ '+fmt(sobraD10Prev + entD24));
+  set('p-tent-d24-real',  '+ R$ '+fmt(sobraD10Real + entD24));
   set('p-deb-d24-prev',   '− R$ '+fmt(debD24));
   set('p-deb-d24-real',   '− R$ '+fmt(debD24));
   set('p-cart-d24-prev',  '− R$ '+fmt(cart24Prev));
   set('p-cart-d24-real',  (cart24FaltandoDigitar>0?'⚠️ ':'')+'− R$ '+fmt(cart24RealTotal));
-  // Total venc. dia 24 = débitos + cartões
+  set('p-tsai-d24-prev',  '− R$ '+fmt(debD24 + cart24Prev));
+  set('p-tsai-d24-real',  '− R$ '+fmt(debD24 + cart24RealTotal));
   set('p-sf-d24-prev',    'R$ '+fmt(sfPrev)); setColor('p-sf-d24-prev', sfPrev>=0);
   set('p-sf-d24-real',    'R$ '+fmt(sfReal)); setColor('p-sf-d24-real', sfReal>=0);
   set('p-badge-d24-prev', 'Previsto R$ '+fmt(sfPrev));
